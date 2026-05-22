@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -60,7 +60,7 @@ body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:linear-gradi
 <div id="nf"></div>
 <div style="text-align:right;padding:4px 10px"><button class="bt sm rd" onclick="resetGame()" style="font-size:.7em">删档</button></div>
 <div id="header"><h1>农场增量</h1><div class="sub" id="sn"></div><div class="weather" id="wt"></div></div>
-<div id="rbar">
+<div id="scarecrowToggle" style="display:none;text-align:center;margin:4px 0"><button class="bt sm gn" id="btnScarecrow" onclick="toggleScarecrow()">🤖 稻草人: 开</button></div><div id="rbar">
 <div class="r"><div class="ic">💰</div><div class="v" id="rc">0</div><div class="l">金币</div></div>
 <div class="r"><div class="ic">💎</div><div class="v" id="rg">0</div><div class="l">宝石</div></div>
 <div class="r"><div class="ic">🌱</div><div class="v" id="rs">0</div><div class="l">种子</div></div>
@@ -87,7 +87,7 @@ body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:linear-gradi
 <div id="pj" class="pn"></div>
 <div id="ppr" class="pn"></div><div id="pr" class="pn"></div><div id="ptut" class="pn"></div>
 <div class="sb">每30秒自动存档 | 刷新页面继续游戏</div>
-<script src="game.js"></script>
+<script src="game.js"></script><script src="patch.js"></script>
 </body>
 </html>
 
