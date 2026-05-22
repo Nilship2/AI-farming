@@ -285,4 +285,147 @@ startProc = function(k) {
     }
     notify("\u5f00\u59cb\u52a0\u5de5: " + d.n + "\uff0c\u6d88\u8017 " + d.inp.n + " x1");
     GS._invNotified = false; return _startProc(k);
-};})();
+};
+// ===================================================================
+// 12. notify 包装 — 存储通知历史
+// ===================================================================
+GS._log = GS._log || [];
+var _notify = notify;
+notify = function(msg) {
+    GS._log.push({time: Date.now(), text: msg});
+    if (GS._log.length > 50) GS._log.shift();
+    return _notify(msg);
+};
+window.showLog = function() {
+    var overlay = document.getElementById("detailOverlay");
+    var content = document.getElementById("detailContent");
+    if (!overlay || !content) return;
+    var h = '<h3 style="color:#ffd700">📋 事件记录</h3><div style="max-height:60vh;overflow-y:auto;text-align:left;font-size:.8em;line-height:1.6">';
+    var logs = GS._log || [];
+    for (var li = Math.max(0, logs.length - 30); li < logs.length; li++) {
+        h += '<div style="padding:2px 0;border-bottom:1px solid rgba(255,255,255,.05)">' + logs[li].text + '</div>';
+    }
+    if (logs.length === 0) h += '<div class="tt">暂无事件记录</div>';
+    h += '</div>';
+    content.innerHTML = h;
+    overlay.style.display = "flex";
+};
+
+// ===================================================================
+// 13. renderFarm 后处理 — 浇水按钮 + 库存出售
+// ===================================================================
+var __renderFarm = renderFarm;
+renderFarm = function() {
+    __renderFarm();
+    if (GS._planting >= 0) return;
+    var pf2 = document.getElementById("pf");
+    if (!pf2) return;
+
+    // Water buttons on growing crops
+    var slots = pf2.querySelectorAll(".sl[data-action='growing']");
+    for (var wi = 0; wi < slots.length; wi++) {
+        (function(slot, sidStr) {
+            if (slot.querySelector(".waterBtn")) return;
+            var sidNum = parseInt(sidStr);
+            var wBtn = document.createElement("button");
+            wBtn.className = "bt sm waterBtn";
+            wBtn.style.cssText = "margin-top:3px;font-size:.65em;padding:2px 8px;background:linear-gradient(135deg,#4fc3f7,#0288d1)";
+            wBtn.textContent = "💧 浇水";
+            wBtn.addEventListener("click", function(e) {
+                e.stopPropagation();
+                var s = GS.land[sidNum];
+                if (!s || !s.crop) return;
+                s.crop.timer += 15;
+                notify("💧 浇水加速！+" + 15 + "s");
+                renderFarm();
+            });
+            slot.appendChild(wBtn);
+        })(slots[wi], slots[wi].getAttribute("data-sid"));
+    }
+
+    // Sell buttons in inventory section
+    var invSpans = pf2.querySelectorAll(".cd:last-child span");
+    for (var si = 0; si < invSpans.length; si++) {
+        (function(span) {
+            if (span.querySelector(".sellBtn")) return;
+            var text = span.textContent;
+            // Parse: "🌾 小麦 x2"
+            var parts = text.split(" x");
+            if (parts.length < 2) return;
+            var iconAndName = parts[0].trim();
+            var qty = parseInt(parts[1]);
+            if (!qty || qty <= 0) return;
+            // Find the item key
+            var items = [
+                {k:'wheat',icon:'🌾',n:'小麦',v:10},{k:'carrot',icon:'🥕',n:'胡萝卜',v:16},
+                {k:'potato',icon:'🥔',n:'土豆',v:25},{k:'corn',icon:'🌽',n:'玉米',v:50},
+                {k:'pumpkin',icon:'🎃',n:'南瓜',v:100},{k:'strawberry',icon:'🍓',n:'草莓',v:70},
+                {k:'tomato',icon:'🍅',n:'番茄',v:35},{k:'pepper',icon:'🌶️',n:'辣椒',v:40},
+                {k:'egg',icon:'🥚',n:'鸡蛋',v:15},{k:'milk',icon:'🥛',n:'牛奶',v:40},
+                {k:'wool',icon:'🧶',n:'羊毛',v:60},{k:'truffle',icon:'🍄',n:'松露',v:150},
+                {k:'flour',icon:'🌾📦',n:'面粉',v:20},{k:'bread',icon:'🍞',n:'面包',v:60},
+                {k:'cheese',icon:'🧀',n:'奶酪',v:100},{k:'cloth',icon:'👘',n:'布料',v:150},
+                {k:'smoked_pumpkin',icon:'🔥🎃',n:'烟熏南瓜',v:200},{k:'corn_wine',icon:'🍺🌽',n:'玉米酒',v:180},
+                {k:'strawberry_jam',icon:'🍯🍓',n:'草莓果酱',v:220}
+            ];
+            var item = null;
+            for (var ii = 0; ii < items.length; ii++) {
+                if (iconAndName.indexOf(items[ii].icon) !== -1 && iconAndName.indexOf(items[ii].n) !== -1) {
+                    item = items[ii]; break;
+                }
+            }
+            if (!item) return;
+            var sBtn = document.createElement("button");
+            sBtn.className = "bt sm gn sellBtn";
+            sBtn.style.cssText = "margin-left:4px;font-size:.6em;padding:1px 6px";
+            sBtn.textContent = "卖" + item.v + "💰";
+            (function(it, sp) {
+                sBtn.addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    if (!GS.inventory[it.k] || GS.inventory[it.k] <= 0) return;
+                    GS.inventory[it.k]--;
+                    GS.coins += it.v;
+                    GS.totalCoinsEarned += it.v;
+                    notify("出售 " + it.icon + it.n + " +" + it.v + "💰");
+                    renderFarm();
+                    R();
+                });
+            })(item, span);
+            span.appendChild(sBtn);
+        })(invSpans[si]);
+    }
+};
+
+// ===================================================================
+// 14. renderAnimals 后处理 — 锁定卡片显示解锁条件
+// ===================================================================
+var __renderAnimals = renderAnimals;
+renderAnimals = function() {
+    __renderAnimals();
+    var pa2 = document.getElementById("pa");
+    if (!pa2) return;
+    var cards = pa2.getElementsByClassName("sl");
+    for (var ai = 0; ai < cards.length; ai++) {
+        (function(card) {
+            if (card.getAttribute("data-ai-inited")) return;
+            card.setAttribute("data-ai-inited", "1");
+            if (!card.classList.contains("lk")) return;
+            var nameEl = card.querySelector("div:nth-child(2)");
+            if (!nameEl) return;
+            var cardName = nameEl.textContent.trim();
+            for (var ak in ANIMAL_DEFS) {
+                if (ANIMAL_DEFS[ak].n === cardName) {
+                    var ad = ANIMAL_DEFS[ak];
+                    var need = Math.max(0, ad.unlock - Math.floor(GS.totalCoinsEarned));
+                    var infoEl = document.createElement("div");
+                    infoEl.className = "tt";
+                    infoEl.style.cssText = "margin-top:4px;color:" + (need > 0 ? "#ff9800" : "#66bb6a");
+                    infoEl.textContent = need > 0 ? ("需累计" + ad.unlock + "💰 (还差" + need + ")") : ("已可购买！价格" + ad.c + "💰");
+                    card.appendChild(infoEl);
+                    break;
+                }
+            }
+        })(cards[ai]);
+    }
+};
+})();
