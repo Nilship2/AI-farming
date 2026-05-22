@@ -16,7 +16,7 @@ initGame = function() {
 var _loadGame = loadGame;
 loadGame = function() {
     var result = _loadGame();
-    if (typeof GS.scarecrowOn === "undefined") GS.scarecrowOn = true;
+    if (typeof GS.scarecrowOn === "undefined") GS.scarecrowOn = true; while (GS.land.length < GS.maxLand) { var soils = ["normal","clay","sand","dark"]; GS.land.push({id:GS.land.length, unlocked:false, soil:soils[GS.land.length % 4]}); }
     return result;
 };
 
@@ -26,7 +26,7 @@ loadGame = function() {
 var _doHarvest = doHarvest;
 doHarvest = function(s) {
     if (s && s.crop) s.lastCrop = s.crop.id;
-    GS._invNotified = false; return _doHarvest(s);
+    return _doHarvest(s);
 };
 
 // ===================================================================
@@ -50,7 +50,7 @@ renderProc = function() {
         for (var pk in PROC_DEFS) {
             if (cardName.indexOf(PROC_DEFS[pk].n) === 0) {
                 var d = PROC_DEFS[pk];
-                if (card.classList.contains("lk")) {
+                if ((" " + card.className + " ").indexOf(" lk ") !== -1) {
                     var need = Math.max(0, d.unlock - Math.floor(GS.totalCoinsEarned));
                     var infoEl = document.createElement("div");
                     infoEl.className = "tt";
@@ -64,8 +64,8 @@ renderProc = function() {
     }
 
     // 2. Show debug notification when panel is active
-    if ((" " + pp2.className + " ").indexOf(" ac ") !== -1 && !GS._invNotified) {
-        GS._invNotified = true;
+    if ((" " + pp2.className + " ").indexOf(" ac ") !== -1 ) {
+        
         var info = [];
         for (var k2 in PROC_DEFS) {
             var d2 = PROC_DEFS[k2];
@@ -77,7 +77,7 @@ renderProc = function() {
                 info.push(d2.n + ":(可建造)");
             }
         }
-        notify("加工: " + (info.length > 0 ? info.join(", ") : "无已解锁设施。累计金币:" + Math.floor(GS.totalCoinsEarned)));
+        
     }
 };// ===================================================================
 // 5. R() — 显示/隐藏稻草人开关 + 存档按钮状态
@@ -284,7 +284,7 @@ startProc = function(k) {
         return;
     }
     notify("\u5f00\u59cb\u52a0\u5de5: " + d.n + "\uff0c\u6d88\u8017 " + d.inp.n + " x1");
-    GS._invNotified = false; return _startProc(k);
+    return _startProc(k);
 };
 // ===================================================================
 // 12. notify 包装 — 存储通知历史
@@ -409,7 +409,7 @@ renderAnimals = function() {
         (function(card) {
             if (card.getAttribute("data-ai-inited")) return;
             card.setAttribute("data-ai-inited", "1");
-            if (!card.classList.contains("lk")) return;
+            if ((" " + card.className + " ").indexOf(" lk ") === -1) return;
             var nameEl = card.querySelector("div:nth-child(2)");
             if (!nameEl) return;
             var cardName = nameEl.textContent.trim();
@@ -428,4 +428,66 @@ renderAnimals = function() {
         })(cards[ai]);
     }
 };
+
+// ===================================================================
+// 15. renderFarm 后处理 — 生长速度显示
+// ===================================================================
+(function() {
+    var _rf3 = renderFarm;
+    renderFarm = function() {
+        _rf3();
+        if (GS._planting >= 0) return;
+        var pf3 = document.getElementById("pf");
+        if (!pf3) return;
+        var slots2 = pf3.querySelectorAll(".sl[data-action='growing'], .sl[data-action='harvest']");
+        for (var gi = 0; gi < slots2.length; gi++) {
+            var slot = slots2[gi];
+            if (slot.querySelector(".growRate")) continue;
+            var sidStr2 = slot.getAttribute("data-sid");
+            if (!sidStr2) continue;
+            var s2 = GS.land[parseInt(sidStr2)];
+            if (!s2 || !s2.crop) continue;
+            var cd3 = CROP_DEFS[s2.crop.id];
+            if (!cd3) continue;
+            // Calculate effective growth multiplier
+            var gh2 = GS.upgrades.greenhouse;
+            var gm2 = 1;
+            for (var gk in UPG_DEFS) { if (GS.upgrades[gk] && UPG_DEFS[gk].ef === "grow") gm2 += UPG_DEFS[gk].v; }
+            if (GS.weather === "rainy") gm2 += 0.3;
+            if (GS.weather === "sunny") gm2 += 0.1;
+            if (GS.relics) { for (var gri = 0; gri < GS.relics.length; gri++) { var grd = RELIC_DEFS[GS.relics[gri]]; if (grd && grd.ef === "grow") gm2 += grd.v; } }
+            var sb2 = {wheat:"spring",corn:"summer",pumpkin:"autumn",potato:"winter"};
+            var so2 = !sb2[s2.crop.id] || sb2[s2.crop.id] === SNAMES[GS.season];
+            var m2 = gh2 ? gm2 : (so2 ? gm2 : gm2 * 0.5);
+            if (cd3.soil && cd3.soil === s2.soil) m2 *= 1.5;
+            // Display
+            var grEl = document.createElement("div");
+            grEl.className = "tt growRate";
+            grEl.style.cssText = "color:#4fc3f7;margin-top:2px;font-size:.7em";
+            grEl.textContent = "🌱x" + m2.toFixed(1);
+            slot.appendChild(grEl);
+        }
+    };
+})();
+
+// ===================================================================
+// 16. R() 后处理 — 计时事件倒计时显示
+// ===================================================================
+(function() {
+    var _R2 = R;
+    R = function() {
+        _R2();
+        var td = document.getElementById("timedEvents");
+        if (!td) return;
+        var msgs = [];
+        if (window._doubleValue && window._doubleValueEnd) {
+            var rem = Math.max(0, Math.ceil((window._doubleValueEnd - Date.now()) / 1000));
+            if (rem > 0) {
+                msgs.push("💰 双倍市价: " + rem + "秒");
+            }
+        }
+        td.innerHTML = msgs.length > 0 ? msgs.join(" | ") : "";
+        td.style.display = msgs.length > 0 ? "block" : "none";
+    };
+})();
 })();
