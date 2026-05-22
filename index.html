@@ -1,0 +1,93 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>农场增量</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:linear-gradient(180deg,#1a0a00,#3d1c00,#5c3a1e);color:#f0e0c0;min-height:100vh;overflow-x:hidden;font-size:15px}
+#app{max-width:940px;margin:0 auto;padding:10px}
+#header{text-align:center;padding:14px 0}
+#header h1{font-size:2em;color:#ffd700;text-shadow:0 0 20px rgba(255,215,0,.5)}
+#header .sub{font-size:.95em;color:#ffcc80}
+#header .weather{font-size:.85em;color:#90caf9}
+#rbar{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;padding:10px;background:rgba(0,0,0,.3);border-radius:12px;margin:6px 0}
+.r{text-align:center;min-width:75px}
+.r .ic{font-size:1.4em}
+.r .v{font-size:1.25em;font-weight:bold;color:#ffd700}
+.r .l{font-size:.7em;color:#aaa}
+#tabs{display:flex;gap:3px;flex-wrap:wrap;margin:6px 0;padding:3px;background:rgba(0,0,0,.2);border-radius:10px}
+.tb{padding:7px 13px;border-radius:8px;cursor:pointer;font-size:.82em;transition:.2s;background:rgba(255,255,255,.06);border:none;color:#ccc;white-space:nowrap;font-family:inherit}
+.tb:hover{background:rgba(255,255,255,.15)}
+.tb.ac{background:rgba(255,215,0,.22);color:#ffd700;font-weight:bold}
+.pn{display:none}
+.pn.ac{display:block}
+.cd{background:rgba(0,0,0,.25);border-radius:11px;padding:12px;margin:6px 0;border:1px solid rgba(255,255,255,.07)}
+.cd h3{margin-bottom:7px;color:#ffcc80;font-size:1em}
+.cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px}
+.bt{display:inline-block;padding:7px 15px;border-radius:7px;border:none;cursor:pointer;font-size:.85em;font-weight:bold;transition:.15s;color:#1a0a00;background:linear-gradient(135deg,#ffd700,#ffaa00);font-family:inherit}
+.bt:hover{transform:scale(1.04);box-shadow:0 3px 12px rgba(255,180,0,.4)}
+.bt:active{transform:scale(.96)}
+.bt.sm{padding:4px 10px;font-size:.75em}
+.bt.gn{background:linear-gradient(135deg,#66bb6a,#43a047)}
+.bt.bl{background:linear-gradient(135deg,#42a5f5,#1e88e5)}
+.bt.pu{background:linear-gradient(135deg,#ab47bc,#8e24aa)}
+.bt.rd{background:linear-gradient(135deg,#ef5350,#e53935)}
+.sl{background:rgba(0,0,0,.3);border-radius:9px;padding:10px;text-align:center;min-height:95px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:2px solid transparent;transition:.3s;cursor:pointer}
+.sl:hover{border-color:rgba(255,255,255,.2)}
+.sl.rd{border-color:#ffd700;animation:pl 1.2s infinite}
+.sl.lk{opacity:.35}
+@keyframes pl{0%,100%{box-shadow:0 0 8px rgba(255,215,0,.2)}50%{box-shadow:0 0 22px rgba(255,215,0,.55)}}
+.pb{width:100%;height:7px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.pf{height:100%;background:linear-gradient(90deg,#66bb6a,#43a047);transition:width .4s;border-radius:3px}
+#nf{position:fixed;top:10px;right:10px;z-index:999;display:flex;flex-direction:column;gap:5px;max-width:280px;pointer-events:none}
+.nt{background:rgba(0,0,0,.88);color:#ffd700;padding:8px 12px;border-radius:9px;font-size:.8em;animation:si .3s;border-left:3px solid #ffd700;pointer-events:auto}
+@keyframes si{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.tt{font-size:.75em;color:#999;line-height:1.3}
+.mr{display:flex;align-items:center;justify-content:space-between;padding:7px;margin:3px 0;background:rgba(255,255,255,.05);border-radius:7px;gap:6px}
+.ar{display:flex;align-items:center;gap:7px;padding:6px;border-radius:7px;margin:3px 0}
+.ar.un{background:rgba(255,215,0,.1)}
+.ar.lk{opacity:.5}
+.sf{background:rgba(139,90,43,.2);padding:10px;border-radius:9px;margin:6px 0;font-style:italic;border-left:3px solid #8b5a2b;line-height:1.5;font-size:.9em}
+.sb{text-align:center;padding:6px;font-size:.75em;color:#888}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:rgba(0,0,0,.2)}
+::-webkit-scrollbar-thumb{background:rgba(255,215,0,.25);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="nf"></div>
+<div style="text-align:right;padding:4px 10px"><button class="bt sm rd" onclick="resetGame()" style="font-size:.7em">删档</button></div>
+<div id="header"><h1>农场增量</h1><div class="sub" id="sn"></div><div class="weather" id="wt"></div></div>
+<div id="rbar">
+<div class="r"><div class="ic">💰</div><div class="v" id="rc">0</div><div class="l">金币</div></div>
+<div class="r"><div class="ic">💎</div><div class="v" id="rg">0</div><div class="l">宝石</div></div>
+<div class="r"><div class="ic">🌱</div><div class="v" id="rs">0</div><div class="l">种子</div></div>
+<div class="r"><div class="ic">⭐</div><div class="v" id="rh">0</div><div class="l">农场之心</div></div>
+</div>
+<div id="tabs">
+<button class="tb ac" data-pn="farm">农田</button>
+<button class="tb" data-pn="animals">畜棚</button>
+<button class="tb" data-pn="process">加工</button>
+<button class="tb" data-pn="upgrades">升级</button>
+<button class="tb" data-pn="trade">贸易</button>
+<button class="tb" data-pn="bestiary">图鉴</button>
+<button class="tb" data-pn="achievements">成就</button>
+<button class="tb" data-pn="journal">日志</button>
+<button class="tb" data-pn="prestige">转生</button><button class="tb" data-pn="relics">🏺 遗迹</button><button class="tb" data-pn="tutorial">❓ 教程</button>
+</div>
+<div id="pf" class="pn ac"></div>
+<div id="pa" class="pn"></div>
+<div id="pp" class="pn"></div>
+<div id="pu" class="pn"></div>
+<div id="pt" class="pn"></div>
+<div id="pb" class="pn"></div>
+<div id="pach" class="pn"></div>
+<div id="pj" class="pn"></div>
+<div id="ppr" class="pn"></div><div id="pr" class="pn"></div><div id="ptut" class="pn"></div>
+<div class="sb">每30秒自动存档 | 刷新页面继续游戏</div>
+<script src="game.js"></script>
+</body>
+</html>
+
