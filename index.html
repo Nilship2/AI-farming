@@ -50,7 +50,7 @@ body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:linear-gradi
 .ar.un{background:rgba(255,215,0,.1)}
 .ar.lk{opacity:.5}
 .sf{background:rgba(139,90,43,.2);padding:10px;border-radius:9px;margin:6px 0;font-style:italic;border-left:3px solid #8b5a2b;line-height:1.5;font-size:.9em}
-.sb{text-align:center;padding:6px;font-size:.75em;color:#888}
+.sb{text-align:center;padding:6px;font-size:.75em;color:#888}.rmBtn{animation:none!important;font-size:.65em!important;padding:2px 8px!important;margin-top:4px!important}
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:rgba(0,0,0,.2)}
 ::-webkit-scrollbar-thumb{background:rgba(255,215,0,.25);border-radius:3px}
@@ -58,7 +58,7 @@ body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:linear-gradi
 </head>
 <body>
 <div id="nf"></div>
-<div style="text-align:right;padding:4px 10px"><button class="bt sm rd" onclick="resetGame()" style="font-size:.7em">删档</button></div>
+<div style="text-align:right;padding:4px 10px"><button class="bt sm" onclick="manualSave()" style="font-size:.7em;margin-right:4px" id="btnSave">💾 保存</button><button class="bt sm rd" onclick="resetGame()" style="font-size:.7em">删档</button></div>
 <div id="header"><h1>农场增量</h1><div class="sub" id="sn"></div><div class="weather" id="wt"></div></div>
 <div id="scarecrowToggle" style="display:none;text-align:center;margin:4px 0"><button class="bt sm gn" id="btnScarecrow" onclick="toggleScarecrow()">🤖 稻草人: 开</button></div><div id="rbar">
 <div class="r"><div class="ic">💰</div><div class="v" id="rc">0</div><div class="l">金币</div></div>
@@ -88,6 +88,14 @@ body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:linear-gradi
 <div id="ppr" class="pn"></div><div id="pr" class="pn"></div><div id="ptut" class="pn"></div>
 <div class="sb">每30秒自动存档 | 刷新页面继续游戏</div>
 <script src="game.js"></script><script src="patch.js"></script>
+
+<div id="detailOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column" onclick="closeDetail()">
+<div id="detailBox" style="background:#3d1c00;border:2px solid #8b5a2b;border-radius:14px;padding:24px;max-width:420px;width:90%;text-align:center;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()">
+<div id="detailContent"></div>
+<button class="bt sm rd" onclick="closeDetail()" style="margin-top:16px">✕ 关闭</button>
+</div>
+</div>
+
 </body>
 </html>
 
