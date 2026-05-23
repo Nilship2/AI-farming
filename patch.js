@@ -430,7 +430,7 @@ renderAnimals = function() {
 };
 
 // ===================================================================
-// 15. renderFarm 后处理 — 生长速度显示
+// 15. renderFarm 后处理 — 生长速度显示（含因素数据）
 // ===================================================================
 (function() {
     var _rf3 = renderFarm;
@@ -439,6 +439,8 @@ renderAnimals = function() {
         if (GS._planting >= 0) return;
         var pf3 = document.getElementById("pf");
         if (!pf3) return;
+        var wi2 = {sunny:"☀️ 晴天",cloudy:"⛅ 多云",rainy:"🌧️ 雨天",storm:"⛈️ 暴风雨"};
+        var soilName2 = function(s){return s==="clay"?"粘土地":s==="sand"?"沙地":s==="dark"?"黑土地":"普通土地";}
         var slots2 = pf3.querySelectorAll(".sl[data-action='growing'], .sl[data-action='harvest']");
         for (var gi = 0; gi < slots2.length; gi++) {
             var slot = slots2[gi];
@@ -449,29 +451,42 @@ renderAnimals = function() {
             if (!s2 || !s2.crop) continue;
             var cd3 = CROP_DEFS[s2.crop.id];
             if (!cd3) continue;
-            // Calculate effective growth multiplier
             var gh2 = GS.upgrades.greenhouse;
             var gm2 = 1;
-            for (var gk in UPG_DEFS) { if (GS.upgrades[gk] && UPG_DEFS[gk].ef === "grow") gm2 += UPG_DEFS[gk].v; }
-            if (GS.weather === "rainy") gm2 += 0.3;
-            if (GS.weather === "sunny") gm2 += 0.1;
+            var gmUpg = 0;
+            var upgNames = [];
+            for (var gk in UPG_DEFS) {
+                if (GS.upgrades[gk] && UPG_DEFS[gk].ef === "grow") {
+                    gmUpg += UPG_DEFS[gk].v;
+                    upgNames.push(UPG_DEFS[gk].n + "+" + UPG_DEFS[gk].v.toFixed(1));
+                }
+            }
+            gm2 += gmUpg;
+            var gmWeather = 0;
+            if (GS.weather === "rainy") gmWeather = 0.3;
+            if (GS.weather === "sunny") gmWeather = 0.1;
+            gm2 += gmWeather;
             if (GS.relics) { for (var gri = 0; gri < GS.relics.length; gri++) { var grd = RELIC_DEFS[GS.relics[gri]]; if (grd && grd.ef === "grow") gm2 += grd.v; } }
             var sb2 = {wheat:"spring",corn:"summer",pumpkin:"autumn",potato:"winter"};
             var so2 = !sb2[s2.crop.id] || sb2[s2.crop.id] === SNAMES[GS.season];
+            var seasonMul = gh2 ? 1 : (so2 ? 1 : 0.5);
             var m2 = gh2 ? gm2 : (so2 ? gm2 : gm2 * 0.5);
-            if (cd3.soil && cd3.soil === s2.soil) m2 *= 1.5;
-            // Display
+            var soilMul = 1;
+            if (cd3.soil && cd3.soil === s2.soil) { soilMul = 1.5; m2 *= 1.5; }
+            var wName = wi2[GS.weather] || GS.weather;
+            var sName = SICONS[GS.season] || SNAMES[GS.season];
+            var soName = soilName2(s2.soil);
+            var info = "1.0|" + gmUpg.toFixed(1) + "|" + gmWeather.toFixed(1) + wName + "|" + seasonMul.toFixed(1) + sName + "|" + soilMul.toFixed(1) + soName + "|" + (gh2?"1":"0") + "|" + m2.toFixed(2);
             var grEl = document.createElement("div");
             grEl.className = "tt growRate";
-            grEl.style.cssText = "color:#4fc3f7;margin-top:2px;font-size:.7em";
+            grEl.setAttribute("data-gr-info", info);
+            if (upgNames.length > 0) grEl.setAttribute("data-gr-upg", upgNames.join(","));
+            grEl.style.cssText = "color:#4fc3f7;margin-top:2px;font-size:.7em;cursor:help";
             grEl.textContent = "🌱x" + m2.toFixed(1);
             slot.appendChild(grEl);
         }
     };
-})();
-
-// ===================================================================
-// 16. R() 后处理 — 计时事件倒计时显示
+})();// 16. R() 后处理 — 计时事件倒计时显示
 // ===================================================================
 (function() {
     var _R2 = R;
@@ -526,5 +541,115 @@ window.rejectOffer = function(idx) {
     GS.merchantOffers.splice(idx, 1);
     notify("❌ 拒绝了商人的“" + o.n + "”单子");
 };
+
+// ===================================================================
+// 19. \u751F\u957F\u901F\u5EA6\u60AC\u6D6E\u63D0\u793A
+// ===================================================================
+(function() {
+    var tooltip = null;
+    function hideTooltip() {
+        if (tooltip) { tooltip.parentNode.removeChild(tooltip); tooltip = null; }
+    }
+    function showTooltip(grEl, e) {
+        hideTooltip();
+        var info = grEl.getAttribute("data-gr-info");
+        if (!info) return;
+        var parts = info.split("|");
+        var base = parseFloat(parts[0]);
+        var upgSum = parseFloat(parts[1]);
+        var weatherStr = parts[2];
+        var seasonStr = parts[3];
+        var soilStr = parts[4];
+        var hasGH = parts[5] === "1";
+        var total = parseFloat(parts[6]);
+        var upgNames = grEl.getAttribute("data-gr-upg") || "";
+        
+        var h = "<div style='font-size:.85em;line-height:1.6'>";
+        h += "<div style='font-weight:bold;margin-bottom:4px;color:#ffd700'>\u{1F331} \u751F\u957F\u901F\u5EA6\u8BE6\u60C5</div>";
+        h += "<div>\u57FA\u7840\u901F\u5EA6: <span style='color:#81c784'>x" + base.toFixed(1) + "</span></div>";
+        
+        if (upgSum > 0 && upgNames) {
+            var unames = upgNames.split(",");
+            for (var ui = 0; ui < unames.length; ui++) {
+                h += "<div style='color:#ffab40'>  +\u5347\u7EA7: " + unames[ui] + "</div>";
+            }
+            h += "<div>\u5347\u7EA7\u5408\u8BA1: <span style='color:#ffab40'>+" + upgSum.toFixed(1) + "</span></div>";
+        }
+        
+        var wv = parseFloat(weatherStr);
+        var wn = weatherStr.replace(/^[\d.]+/, "");
+        if (wv > 0) {
+            h += "<div>\u5929\u6C14: " + wn + " <span style='color:#4fc3f7'>+" + wv.toFixed(1) + "</span></div>";
+        } else {
+            h += "<div>\u5929\u6C14: " + wn + " <span style='color:#888'>\u65E0\u52A0\u6210</span></div>";
+        }
+        
+        var sv = parseFloat(seasonStr);
+        var sn = seasonStr.replace(/^[\d.]+/, "");
+        if (hasGH) {
+            h += "<div>\u5B63\u8282: <span style='color:#ce93d8'>\u6E29\u5BA4\u65E0\u89C6\u5B63\u8282</span> x1.0</div>";
+        } else if (sv >= 1) {
+            h += "<div>\u5B63\u8282: " + sn + " <span style='color:#81c784'>\u5B63\u8282\u9002\u5B9C</span> x1.0</div>";
+        } else {
+            h += "<div>\u5B63\u8282: " + sn + " <span style='color:#ef5350'>\u53CD\u5B63\u8282</span> x0.5</div>";
+        }
+        
+        var sov = parseFloat(soilStr);
+        var son = soilStr.replace(/^[\d.]+/, "");
+        if (sov > 1) {
+            h += "<div>\u571F\u58E4: " + son + " <span style='color:#a5d6a7'>\u9002\u5408</span> x" + sov.toFixed(1) + "</div>";
+        } else {
+            h += "<div>\u571F\u58E4: " + son + " <span style='color:#888'>\u65E0\u52A0\u6210</span> x1.0</div>";
+        }
+        
+        h += "<div style='border-top:1px solid rgba(255,255,255,.2);margin-top:4px;padding-top:4px;font-weight:bold'>\u5408\u8BA1: <span style='color:#ffd700;font-size:1.1em'>x" + total.toFixed(2) + "</span></div>";
+        h += "</div>";
+        
+        tooltip = document.createElement("div");
+        tooltip.id = "growthTooltip";
+        tooltip.style.cssText = "position:fixed;z-index:9999;background:rgba(30,30,30,.95);color:#e0e0e0;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);box-shadow:0 4px 20px rgba(0,0,0,.5);min-width:200px;pointer-events:none;font-size:.8em";
+        tooltip.innerHTML = h;
+        document.body.appendChild(tooltip);
+        
+        var x = e.clientX + 15;
+        var y = e.clientY - 10;
+        var tw = tooltip.offsetWidth;
+        var th = tooltip.offsetHeight;
+        if (x + tw > window.innerWidth) x = e.clientX - tw - 15;
+        if (y + th > window.innerHeight) y = window.innerHeight - th - 5;
+        if (x < 5) x = 5;
+        if (y < 5) y = 5;
+        tooltip.style.left = x + "px";
+        tooltip.style.top = y + "px";
+    }
+    
+    var pf = document.getElementById("pf");
+    if (pf) {
+        pf.addEventListener("mouseover", function(e) {
+            var el = e.target;
+            while (el && el !== pf && el !== document.body) {
+                if (el.nodeType === 1 && (" " + el.className + " ").indexOf(" growRate ") !== -1) {
+                    showTooltip(el, e);
+                    return;
+                }
+                el = el.parentNode;
+            }
+            hideTooltip();
+        });
+        pf.addEventListener("mouseout", function(e) {
+            var el = e.target;
+            if (el && el.nodeType === 1 && (" " + el.className + " ").indexOf(" growRate ") !== -1) {
+                var rel = e.relatedTarget;
+                var p = rel;
+                while (p && p !== document.body) {
+                    if (p === el) return;
+                    p = p.parentNode;
+                }
+                hideTooltip();
+            }
+        });
+    }
+})();
+
 
 })();
