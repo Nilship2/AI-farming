@@ -16,7 +16,7 @@ initGame = function() {
 var _loadGame = loadGame;
 loadGame = function() {
     var result = _loadGame();
-    if (typeof GS.scarecrowOn === "undefined") GS.scarecrowOn = true; while (GS.land.length < GS.maxLand) { var soils = ["normal","clay","sand","dark"]; GS.land.push({id:GS.land.length, unlocked:false, soil:soils[GS.land.length % 4]}); }
+    if (typeof GS.scarecrowOn === "undefined") GS.scarecrowOn = true; GS.maxLand = 20 + Math.floor((GS.prestigePoints||0)/2); while (GS.land.length < GS.maxLand) { var soils = ["normal","clay","sand","dark"]; GS.land.push({id:GS.land.length, unlocked:false, soil:soils[GS.land.length % 4]}); }
     return result;
 };
 
@@ -378,14 +378,14 @@ renderFarm = function() {
             var sBtn = document.createElement("button");
             sBtn.className = "bt sm gn sellBtn";
             sBtn.style.cssText = "margin-left:4px;font-size:.6em;padding:1px 6px";
-            sBtn.textContent = "卖" + item.v + "💰";
+            var sellV=item.v*(1+GS.prestigePoints*0.1);sBtn.textContent = "卖" + Math.floor(sellV) + "💰";
             (function(it, sp) {
                 sBtn.addEventListener("click", function(e) {
                     e.stopPropagation();
                     if (!GS.inventory[it.k] || GS.inventory[it.k] <= 0) return;
                     GS.inventory[it.k]--;
-                    GS.coins += it.v;
-                    GS.totalCoinsEarned += it.v;
+                    GS.coins += Math.floor(it.v*(1+GS.prestigePoints*0.1));
+                    GS.totalCoinsEarned += Math.floor(it.v*(1+GS.prestigePoints*0.1));
                     notify("出售 " + it.icon + it.n + " +" + it.v + "💰");
                     renderFarm();
                     R();
@@ -490,4 +490,41 @@ renderAnimals = function() {
         td.style.display = msgs.length > 0 ? "block" : "none";
     };
 })();
+
+// ===================================================================
+// 17. renderTrade — 添加拒绝按钮
+// ===================================================================
+var _renderTrade = renderTrade;
+renderTrade = function() {
+    _renderTrade();
+    var pt2 = document.getElementById("pt");
+    if (!pt2) return;
+    var offers = pt2.querySelectorAll(".mr");
+    for (var oi = 0; oi < offers.length; oi++) {
+        (function(row, idx) {
+            if (row.querySelector(".rejectBtn")) return;
+            var rBtn = document.createElement("button");
+            rBtn.className = "bt sm rd rejectBtn";
+            rBtn.style.cssText = "margin-left:6px;font-size:.65em;padding:2px 8px";
+            rBtn.textContent = "❌ 拒绝";
+            rBtn.addEventListener("click", function(e) {
+                e.stopPropagation();
+                rejectOffer(idx);
+                renderTrade();
+            });
+            row.appendChild(rBtn);
+        })(offers[oi], oi);
+    }
+};
+
+// ===================================================================
+// 18. rejectOffer
+// ===================================================================
+window.rejectOffer = function(idx) {
+    if (!GS.merchantOffers || idx >= GS.merchantOffers.length) return;
+    var o = GS.merchantOffers[idx];
+    GS.merchantOffers.splice(idx, 1);
+    notify("❌ 拒绝了商人的“" + o.n + "”单子");
+};
+
 })();
