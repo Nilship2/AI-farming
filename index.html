@@ -54,11 +54,32 @@ body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:linear-gradi
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:rgba(0,0,0,.2)}
 ::-webkit-scrollbar-thumb{background:rgba(255,215,0,.25);border-radius:3px}
+
+body.light{background:#f0ebe0;color:#1a0f05}
+body.light .cd{background:rgba(139,90,43,.08);border:1px solid rgba(139,90,43,.15)}
+body.light .sl{background:rgba(139,90,43,.06)}
+body.light .tb{color:#3d1c00;background:rgba(139,90,43,.08)}
+body.light .tb:hover{background:rgba(139,90,43,.2)}
+body.light .tb.ac{background:rgba(139,90,43,.25);color:#1a0f05;font-weight:bold}
+body.light #rbar{background:rgba(139,90,43,.08)}
+body.light #rbar .v{color:#6b3a0a}
+body.light .nt{background:rgba(240,235,224,.97);color:#1a0f05;border-left:3px solid #8b5a2b}
+body.light .tt{color:#5a4030}
+body.light .bt{color:#f5f0e8}
+body.light .mr{background:rgba(139,90,43,.06)}
+body.light .sb{color:#5a4030}
+body.light #header h1{color:#4a2510;text-shadow:none}
+body.light #header .sub{color:#4a3520}
+body.light #header .weather{color:#3a6080}
+body.light h3{color:#4a2510}
+body.light h4{color:#5a2d0c}
+body.light .sf{background:rgba(139,90,43,.12);color:#1a0f05}
+body.light [style*="color:#ffd700"]{color:#7a520e!important}
+body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 </style>
 </head>
 <body>
 <div id="nf"></div>
-<div style="text-align:right;padding:4px 10px"><button class="bt sm" onclick="manualSave()" style="font-size:.7em;margin-right:4px" id="btnSave">💾 保存</button><button class="bt sm" onclick="showLog()" style="font-size:.7em;margin-right:4px">📋 历史</button><button class="bt sm rd" onclick="resetGame()" style="font-size:.7em">删档</button></div>
 <div id="header"><h1>农场增量</h1><div class="sub" id="sn"></div><div style="width:200px;height:6px;background:rgba(255,255,255,.1);border-radius:3px;margin:4px auto;overflow:hidden"><div id="seasonProgress" style="height:100%;width:0%;background:linear-gradient(90deg,#ffd700,#ff9800);border-radius:3px;transition:width 1s"></div></div><div class="weather" id="wt"></div></div>
 <div id="scarecrowToggle" style="display:none;text-align:center;margin:4px 0"><button class="bt sm gn" id="btnScarecrow" onclick="toggleScarecrow()">🤖 稻草人: 开</button></div><div id="timedEvents" style="display:none;text-align:center;padding:4px 10px;background:rgba(255,215,0,.15);border-radius:8px;margin:4px 0;font-size:.8em;color:#ffd700"></div><div id="rbar">
 <div class="r"><div class="ic">💰</div><div class="v" id="rc">0</div><div class="l">金币</div></div>
@@ -76,6 +97,8 @@ body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:linear-gradi
 <button class="tb" data-pn="achievements">成就</button>
 <button class="tb" data-pn="journal">日志</button>
 <button class="tb" data-pn="prestige">转生</button><button class="tb" data-pn="relics">🏺 遗迹</button><button class="tb" data-pn="tutorial">❓ 教程</button>
+<button class="tb" data-pn="inventory">📦 库存</button>
+<button class="tb" data-pn="system">⚙️ 系统</button>
 </div>
 <div id="pf" class="pn ac"></div>
 <div id="pa" class="pn"></div>
@@ -86,6 +109,8 @@ body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:linear-gradi
 <div id="pach" class="pn"></div>
 <div id="pj" class="pn"></div>
 <div id="ppr" class="pn"></div><div id="pr" class="pn"></div><div id="ptut" class="pn"></div>
+<div id="pinv" class="pn"></div>
+<div id="psys" class="pn"></div>
 <div class="sb">每30秒自动存档 | 刷新页面继续游戏</div>
 <script src="game.js"></script><script src="patch.js"></script>
 

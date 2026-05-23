@@ -33,8 +33,7 @@ function checkAch(){for(var i=0;i<ACH_DEFS.length;i++){var a=ACH_DEFS[i];if(!GS.
 function checkStory(k){if(STORIES[k]&&GS.storyFragments.indexOf(k)===-1){GS.storyFragments.push(k);notify("📜 发现故事碎片："+STORIES[k].t);}}
 function doPrestige(){var pts=Math.floor(Math.sqrt(Math.max(0,GS.totalCoinsEarned)/10000));if(pts<1){notify("需要累计至少获得 10000 金币才能转生！");return;}if(!confirm("转生将重置所有进度，获得 "+pts+" 个农场之心。\n每个农场之心永久 +10% 金币收入。\n图鉴、杂交品种、成就和故事碎片会保留。\n\n确定转生吗？"))return;GS.prestigePoints+=pts;var dc=GS.discoveredCrops.slice(),dh=GS.discoveredHybrids.slice(),da=GS.discoveredAnimals.slice();var ss=GS.storyFragments.slice(),sa=Object.assign({},GS.achievements);GS.coins=0;GS.gems=0;GS.totalCoinsEarned=0;GS.totalCropsHarvested=0;GS.totalAnimalsRaised=0;GS.year=1;GS.season=0;GS.seasonTimer=0;GS.weather="sunny";GS.weatherTimer=120;GS.maxAnimals=4+Math.floor(GS.prestigePoints/2);GS.upgrades={};GS.processors={};GS.inventory={seeds:10};GS._planting=-1;if(!GS.relics)GS.relics=[];GS.merchantOffers=[];GS.merchantTimer=120;GS.eventCooldown=180;GS.discoveredCrops=dc;GS.discoveredHybrids=dh;GS.discoveredAnimals=da;GS.storyFragments=ss;GS.achievements=sa;var savedRelics=GS.relics?GS.relics.slice():[];initGame();GS.relics=savedRelics;notify("🔄 转生成功！获得 "+pts+" 个农场之心！（总计："+GS.prestigePoints+"）");checkStory("prestige_"+GS.prestigePoints);saveGame();renderAll();}
 function R(){var rc=document.getElementById("rc");if(rc)rc.textContent=Math.floor(GS.coins).toLocaleString();var rg=document.getElementById("rg");if(rg)rg.textContent=GS.gems;var rs=document.getElementById("rs");if(rs)rs.textContent=GS.inventory.seeds||0;var rh=document.getElementById("rh");if(rh)rh.textContent=GS.prestigePoints;var sn=document.getElementById("sn");if(sn){sn.textContent=SICONS[GS.season]+" · 第"+GS.year+"年";var sp=document.getElementById("seasonProgress");if(sp){sp.style.width=Math.floor(GS.seasonTimer/GS.seasonDuration*100)+"%";}}var wi={sunny:"☀️ 晴天",cloudy:"⛅ 多云",rainy:"🌧️ 雨天",storm:"⛈️ 暴风雨"};var wt=document.getElementById("wt");if(wt)wt.textContent=wi[GS.weather]||GS.weather;}
-function renderFarm(){var soilName=function(s){return s==="clay"?"粘土地":s==="sand"?"沙地":s==="dark"?"黑土地":"普通土地";};if(GS._planting>=0)return;var h='<div class="cd"><h3>🌾 农田</h3><button class="bt sm gn" data-action="buySeeds" data-n="100" style="font-size:.7em">🌱+1 (4💰)</button> <button class="bt sm gn" data-action="buySeeds" data-n="5" style="font-size:.7em">🌱+5 (20💰)</button> <button class="bt sm gn" data-action="buySeeds" data-n="20" style="font-size:.7em">🌱+20 (80💰)</button> <button class="bt sm gn" data-action="buySeeds" data-n="100" style="font-size:.7em">🌱+100 (400💰)</button> <button class="bt sm gn" data-action="buySeeds" data-n="500" style="font-size:.7em">🌱+500 (2000💰)</button><div class="cg" style="grid-template-columns:repeat(5,1fr)">';for(var i=0;i<GS.land.length;i++){var s=GS.land[i];if(!s.unlocked){var c=i<3?0:i<6?(i-2)*300:i<10?1200+(i-6)*600:i<15?3600+(i-10)*1000:i<20?8600+(i-15)*2000:18600+(i-20)*5000;h+='<div class="sl lk" data-action="unlock" data-sid="'+i+'"><div>🔒</div><div>锁定</div><div class="tt">解锁:'+c+'💰</div><div class="tt">土壤:'+soilName(s.soil)+'</div></div>';}else if(s.crop){var cd=CROP_DEFS[s.crop.id];var p=Math.min(1,s.crop.timer/cd.g);var rd=p>=1;h+='<div class="sl'+(rd?' rd':'')+'" data-action="'+(rd?'harvest':'growing')+'" data-sid="'+i+'"><div style="font-size:2em">'+(cd.i||'🌱')+'</div><div>'+cd.n+'</div><div class="pb"><div class="pf" style="width:'+(p*100)+'%"></div></div><div class="tt">'+(rd?'✅ 可收获！':Math.floor(cd.g-s.crop.timer)+'s')+'</div><div class="tt">土壤:'+soilName(s.soil)+' | 产出:2个</div></div>';}else{h+='<div class="sl" data-action="plant" data-sid="'+i+'"><div style="font-size:2em">🟫</div><div>空地</div><div class="tt">点击种植</div><div class="tt">土壤:'+soilName(s.soil)+'</div></div>';}}h+='</div></div>';h+='<div class="cd"><h3>📦 库存</h3><div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.85em">';var invItems=[{k:'wheat',i:'🌾',n:'小麦'},{k:'carrot',i:'🥕',n:'胡萝卜'},{k:'potato',i:'🥔',n:'土豆'},{k:'corn',i:'🌽',n:'玉米'},{k:'pumpkin',i:'🎃',n:'南瓜'},{k:'strawberry',i:'🍓',n:'草莓'},{k:'tomato',i:'🍅',n:'番茄'},{k:'pepper',i:'🌶️',n:'辣椒'},{k:'egg',i:'🥚',n:'鸡蛋'},{k:'milk',i:'🥛',n:'牛奶'},{k:'wool',i:'🧶',n:'羊毛'},{k:'truffle',i:'🍄',n:'松露'},{k:'flour',i:'🌾📦',n:'面粉'},{k:'bread',i:'🍞',n:'面包'},{k:'cheese',i:'🧀',n:'奶酪'},{k:'cloth',i:'👘',n:'布料'},{k:'smoked_pumpkin',i:'🔥🎃',n:'烟熏南瓜'},{k:'corn_wine',i:'🍺🌽',n:'玉米酒'},{k:'strawberry_jam',i:'🍯🍓',n:'草莓果酱'}];var hasAny=false;for(var ii=0;ii<invItems.length;ii++){var it=invItems[ii];if(GS.inventory[it.k]){hasAny=true;h+='<span>'+it.i+' '+it.n+' x'+GS.inventory[it.k]+'</span>';}}if(!hasAny)h+='<span class="tt">暂无库存物品</span>';h+='</div></div>';var pf=document.getElementById("pf");if(pf)pf.innerHTML=h;}
-function renderAnimals(){var h='<div class="cd"><h3>🐄 畜棚</h3><div class="tt">容量：'+GS.animals.length+'/'+GS.maxAnimals+'</div><div class="cg">';for(var k in ANIMAL_DEFS){var d=ANIMAL_DEFS[k];var ow=0;for(var i=0;i<GS.animals.length;i++){if(GS.animals[i].id===k)ow++;}var ul=GS.totalCoinsEarned>=d.unlock||GS.discoveredAnimals.indexOf(k)!==-1;h+='<div class="sl'+(ul?'':' lk')+'"><div style="font-size:2em">'+d.i+'</div><div>'+d.n+'</div><div class="tt">产物:'+d.p.i+d.p.n+'</div><div class="tt">拥有:'+ow+' | 价格:'+d.c+'💰</div>'+(ul?'<button class="bt sm bl" data-action="buyAnimal" data-aid="'+k+'">购买</button>':'')+'</div>';}h+='</div></div>';if(GS.animals.length>0){h+='<div class="cd"><h3>我的动物</h3><div class="cg">';for(var j=0;j<GS.animals.length;j++){var a=GS.animals[j];var ad=ANIMAL_DEFS[a.id];var ap=Math.floor(a.af/a.am*100);h+='<div class="sl'+(a.pr?' rd':'')+'" data-action="collectAnimal" data-aidx="'+j+'"><div style="font-size:2em">'+ad.i+'</div><div>'+ad.n+'</div><div class="pb"><div class="pf" style="width:'+(a.pr?100:Math.floor(a.pt/a.pi*100))+'%"></div></div><div class="tt">好感:'+(new Array(Math.ceil(ap/25)+1).join('❤️')||'🤍')+' '+ap+'%</div>'+(a.pr?'<div class="tt">✅ 可收取！</div>':'<div class="tt">'+Math.floor(a.pi-a.pt)+'s</div>')+'</div>';}h+='</div></div>';}var pa=document.getElementById("pa");if(pa)pa.innerHTML=h;}
+function renderFarm(){var soilName=function(s){return s==="clay"?"粘土地":s==="sand"?"沙地":s==="dark"?"黑土地":"普通土地";};if(GS._planting>=0)return;var h='<div class="cd"><h3>🌾 农田</h3><button class="bt sm gn" data-action="buySeeds" data-n="100" style="font-size:.7em">🌱+1 (4💰)</button> <button class="bt sm gn" data-action="buySeeds" data-n="5" style="font-size:.7em">🌱+5 (20💰)</button> <button class="bt sm gn" data-action="buySeeds" data-n="20" style="font-size:.7em">🌱+20 (80💰)</button> <button class="bt sm gn" data-action="buySeeds" data-n="100" style="font-size:.7em">🌱+100 (400💰)</button> <button class="bt sm gn" data-action="buySeeds" data-n="500" style="font-size:.7em">🌱+500 (2000💰)</button><div class="cg" style="grid-template-columns:repeat(5,1fr)">';for(var i=0;i<GS.land.length;i++){var s=GS.land[i];if(!s.unlocked){var c=i<3?0:i<6?(i-2)*300:i<10?1200+(i-6)*600:i<15?3600+(i-10)*1000:i<20?8600+(i-15)*2000:18600+(i-20)*5000;h+='<div class="sl lk" data-action="unlock" data-sid="'+i+'"><div>🔒</div><div>锁定</div><div class="tt">解锁:'+c+'💰</div><div class="tt">土壤:'+soilName(s.soil)+'</div></div>';}else if(s.crop){var cd=CROP_DEFS[s.crop.id];var p=Math.min(1,s.crop.timer/cd.g);var rd=p>=1;h+='<div class="sl'+(rd?' rd':'')+'" data-action="'+(rd?'harvest':'growing')+'" data-sid="'+i+'"><div style="font-size:2em">'+(cd.i||'🌱')+'</div><div>'+cd.n+'</div><div class="pb"><div class="pf" style="width:'+(p*100)+'%"></div></div><div class="tt">'+(rd?'✅ 可收获！':Math.floor(cd.g-s.crop.timer)+'s')+'</div><div class="tt">土壤:'+soilName(s.soil)+' | 产出:2个</div></div>';}else{h+='<div class="sl" data-action="plant" data-sid="'+i+'"><div style="font-size:2em">🟫</div><div>空地</div><div class="tt">点击种植</div><div class="tt">土壤:'+soilName(s.soil)+'</div></div>';}}h+='</div></div>';var pf=document.getElementById("pf");if(pf)pf.innerHTML=h;}function renderAnimals(){var h='<div class="cd"><h3>🐄 畜棚</h3><div class="tt">容量：'+GS.animals.length+'/'+GS.maxAnimals+'</div><div class="cg">';for(var k in ANIMAL_DEFS){var d=ANIMAL_DEFS[k];var ow=0;for(var i=0;i<GS.animals.length;i++){if(GS.animals[i].id===k)ow++;}var ul=GS.totalCoinsEarned>=d.unlock||GS.discoveredAnimals.indexOf(k)!==-1;h+='<div class="sl'+(ul?'':' lk')+'"><div style="font-size:2em">'+d.i+'</div><div>'+d.n+'</div><div class="tt">产物:'+d.p.i+d.p.n+'</div><div class="tt">拥有:'+ow+' | 价格:'+d.c+'💰</div>'+(ul?'<button class="bt sm bl" data-action="buyAnimal" data-aid="'+k+'">购买</button>':'')+'</div>';}h+='</div></div>';if(GS.animals.length>0){h+='<div class="cd"><h3>我的动物</h3><div class="cg">';for(var j=0;j<GS.animals.length;j++){var a=GS.animals[j];var ad=ANIMAL_DEFS[a.id];var ap=Math.floor(a.af/a.am*100);h+='<div class="sl'+(a.pr?' rd':'')+'" data-action="collectAnimal" data-aidx="'+j+'"><div style="font-size:2em">'+ad.i+'</div><div>'+ad.n+'</div><div class="pb"><div class="pf" style="width:'+(a.pr?100:Math.floor(a.pt/a.pi*100))+'%"></div></div><div class="tt">好感:'+(new Array(Math.ceil(ap/25)+1).join('❤️')||'🤍')+' '+ap+'%</div>'+(a.pr?'<div class="tt">✅ 可收取！</div>':'<div class="tt">'+Math.floor(a.pi-a.pt)+'s</div>')+'</div>';}h+='</div></div>';}var pa=document.getElementById("pa");if(pa)pa.innerHTML=h;}
 function renderProc(){var h='<div class="cd"><h3>🏭 加工设施</h3><div class="cg">';for(var k in PROC_DEFS){var d=PROC_DEFS[k];var pr=GS.processors[k]||{owned:false,level:1,busy:false,timer:0};var ul=GS.totalCoinsEarned>=d.unlock;h+='<div class="sl'+(ul?'':' lk')+'"><div style="font-size:2em">'+d.i+'</div><div>'+d.n+' '+(pr.owned?'Lv.'+pr.level:'')+'</div><div class="tt">'+d.inp.n+' → '+d.out.i+d.out.n+'</div><div class="tt">价值提升:'+d.out.v+'💰</div>';if(ul){if(!pr.owned)h+='<button class="bt sm bl" data-action="buyProc" data-pid="'+k+'">建造 ('+d.c+'💰)</button>';else{h+='<button class="bt sm pu" data-action="buyProc" data-pid="'+k+'">升级 ('+(d.c*pr.level*2)+'💰)</button>';if(pr.busy)h+='<div class="pb" style="margin-top:4px"><div class="pf" style="width:'+(100-Math.floor(pr.timer/d.t*100))+'%"></div></div><div class="tt">加工中...'+Math.floor(pr.timer)+'s</div>';else h+='<button class="bt sm gn" data-action="startProc" data-pid="'+k+'">加工 ('+d.inp.n+'x1)</button>';}}h+='</div>';}h+='</div></div>';var pp=document.getElementById("pp");if(pp)pp.innerHTML=h;}
 function renderUpgrades(){var h='<div class="cd"><h3>⬆ 科技升级</h3><div class="cg">';for(var k in UPG_DEFS){var d=UPG_DEFS[k];var ow=GS.upgrades[k];var ul=GS.totalCoinsEarned>=d.unlock;h+='<div class="sl'+(ow?' rd':'')+(!ul&&!ow?' lk':'')+'"><div style="font-size:2em">'+d.i+'</div><div>'+d.n+'</div><div class="tt">'+d.d+'</div>'+(ow?'<div style="color:#66bb6a">✅ 已拥有</div>':ul?'<button class="bt sm bl" data-action="buyUpgrade" data-uid="'+k+'">购买 ('+d.c+'💰)</button>':'<div class="tt">需累计 '+d.unlock+'💰</div>')+'</div>';}h+='</div></div>';var pu=document.getElementById("pu");if(pu)pu.innerHTML=h;}
 function renderTrade(){var h='<div class="cd"><h3>🏪 贸易站</h3>';if(GS.merchantOffers.length===0)h+='<div class="tt">商人尚未到来... 请耐心等待，或积累更多金币。</div>';else{for(var i=0;i<GS.merchantOffers.length;i++){var o=GS.merchantOffers[i];h+='<div class="mr"><span>'+(o.t==="buy"?'🛒':'💰')+' '+o.n+' x'+o.q+'</span><span>'+o.p+'💰</span><button class="bt sm gn" data-action="acceptOffer" data-oidx="'+i+'">'+(o.t==="buy"?'出售':'购买')+'</button></div>';}}h+='</div>';var pt=document.getElementById("pt");if(pt)pt.innerHTML=h;}
@@ -70,8 +69,137 @@ var pb=document.getElementById("pb");if(pb)pb.innerHTML=h;
 }function renderAch(){var h='<div class="cd"><h3>🏆 成就</h3>';for(var i=0;i<ACH_DEFS.length;i++){var a=ACH_DEFS[i];var ul=GS.achievements[a.id];h+='<div class="ar'+(ul?' un':' lk')+'"><span>'+new Array(a.t+1).join('⭐')+'</span><div><div>'+(ul?'✅ ':'')+a.n+'</div><div class="tt">'+a.d+'</div></div></div>';}h+='</div>';var pach=document.getElementById("pach");if(pach)pach.innerHTML=h;}
 function renderJournal(){var h='<div class="cd"><h3>📜 老农日记</h3>';if(GS.storyFragments.length===0)h+='<div class="tt">还没有发现任何故事碎片。继续探索农场，在扩张土地、解锁新功能时可能会发现它们。</div>';else{for(var i=0;i<GS.storyFragments.length;i++){var k=GS.storyFragments[i];var f=STORIES[k];if(f)h+='<div class="sf"><strong>'+f.t+'</strong><p>'+f.x+'</p></div>';}}h+='</div>';var pj=document.getElementById("pj");if(pj)pj.innerHTML=h;}
 function renderPrestige(){var pts=Math.floor(Math.sqrt(Math.max(0,GS.totalCoinsEarned)/10000));var h='<div class="cd"><h3>🔄 转生系统</h3>';h+='<p>累计获得 <strong>'+Math.floor(GS.totalCoinsEarned).toLocaleString()+'</strong> 金币</p>';h+='<p>转生后可获得 <strong>'+pts+'</strong> 个农场之心</p>';h+='<p>当前农场之心：<strong>'+GS.prestigePoints+'</strong>（金币收入 +'+GS.prestigePoints*10+'%）</p>';h+='<p class="tt">转生将重置所有进度，但保留：图鉴、杂交品种、成就、故事碎片</p>';h+='<p class="tt">转生后解锁更多土地和畜棚容量</p>';h+='<button class="bt" data-action="doPrestige"'+(pts<1?' disabled':'')+'>🔄 转生获得 '+pts+' 个农场之心</button>';h+='</div>';var ppr=document.getElementById("ppr");if(ppr)ppr.innerHTML=h;}
-function renderTutorial(){var h='<div class="cd"><h3>📖 新手指南</h3>';h+='<div class="sf"><strong>欢迎来到农场增量！</strong><p>这是一款放置增量游戏。即使关闭页面，进度也会保留。</p></div>';h+='<div class="cd"><h3>🌾 基础操作</h3>';h+='<p>1. <strong>种植</strong>：点击<em>空地</em>选择作物。</p>';h+='<p>2. <strong>收获</strong>：作物成熟后槽位<em>金色闪烁</em>，<strong>点击即可收获</strong>获得金币。</p>';h+='<p>3. <strong>买种子</strong>：点击农田上方按钮。</p>';h+='<p>4. <strong>解锁土地</strong>：点击🔒锁定的土地。</p></div>';h+='<div class="cd"><h3>🐄 动物</h3><p>在畜棚面板购买动物。好感度满后产出翻倍。点击动物收取产物。</p></div>';h+='<div class="cd"><h3>🏭 加工链</h3><p>建造设施：小麦→磨坊→面粉→面包房→面包。每个环节提升价值。</p></div>';h+='<div class="cd"><h3>⬆ 升级</h3><p>稻草人→灌溉→收割机→无人机，逐步实现全自动。</p></div>';h+='<div class="cd"><h3>🧬 杂交</h3><p>不同作物种在<strong>相邻位置</strong>，收获时概率发现新品种。</p></div>';h+='<div class="cd"><h3>☀️ 季节</h3><p>每30分钟切换季节，影响作物生长。天气也会变化。</p></div>';h+='<div class="cd"><h3>🔄 转生</h3><p>累计足够金币后转生获得农场之心，永久+10%金币收入。</p></div>';h+='<div class="cd"><h3>💡 小贴士</h3><p>· 注意土壤类型！匹配的土壤生长快50%。</p><p>· 加工品可卖给商人。随机事件带来惊喜。</p><p>· 图鉴和成就记录探索进度。每30秒自动存档。</p></div></div>';var ptut=document.getElementById("ptut");if(ptut)ptut.innerHTML=h;}
-function renderRelics(){var h='<div class="cd"><h3>🏺 远古遗迹</h3><p class="tt">收获时有概率发现远古遗物，提供永久加成</p>';if(!GS.relics||GS.relics.length===0){h+='<div class="sf">尚未发现任何遗迹。继续收获，或许某天会挖到什么...</div>';}else{h+='<div class="cg">';for(var i=0;i<GS.relics.length;i++){var rd=RELIC_DEFS[GS.relics[i]];h+='<div class="sl"><div style="font-size:2em">'+(rd.i||'🏺')+'</div><div>'+rd.n+'</div><div class="tt">'+rd.d+'</div></div>';}h+='</div>';var missing=Object.keys(RELIC_DEFS).length-GS.relics.length;h+='<div class="tt" style="text-align:center;margin-top:8px">已发现 '+GS.relics.length+'/'+Object.keys(RELIC_DEFS).length+' 个遗迹'+(missing>0?'，还有 '+missing+' 个等待发现':' ✅ 全部收集！')+'</div>';}h+='</div>';var pr=document.getElementById("pr");if(pr)pr.innerHTML=h;}function renderAll(){R();renderFarm();renderAnimals();renderProc();renderUpgrades();renderTrade();renderBestiary();renderAch();renderJournal();renderPrestige();renderRelics();renderTutorial();}
+function renderTutorial(){
+var h='<div class="cd"><h3>📖 新手指南</h3>';
+h+='<div class="sf"><strong>欢迎来到农场增量！</strong><p>这是一款放置增量游戏。即使关闭页面，进度也会保留。</p></div>';
+h+='<div class="cd"><h3>🌾 基础循环</h3>';
+h+='<p>1. <strong>种植</strong>：点击空地选择作物，消耗种子</p>';
+h+='<p>2. <strong>生长</strong>：作物自动生长，进度条满后点击收获</p>';
+h+='<p>3. <strong>收获</strong>：获得 <b>2个</b> 对应作物资源</p>';
+h+='<p>4. <strong>出售</strong>：在「📦 库存」标签页卖出资源换取金币</p>';
+h+='<p>5. <strong>扩张</strong>：用金币解锁更多土地、动物、加工设施</p></div>';
+h+='<div class="cd"><h3>📦 经济循环</h3>';
+h+='<p>★ 收获作物 → 获得资源 → 卖出资源 → 获得金币 → 买种子/升级</p>';
+h+='<p class="tt">每次收获产出2个作物，有30%概率返还1颗种子。动物每次产出1个产品。</p></div>';
+h+='<div class="cd"><h3>🐾 动物</h3><p>在畜棚面板购买动物。好感度满后产出翻倍。点击动物收取产品。</p></div>';
+h+='<div class="cd"><h3>🏭 加工链</h3><p>小麦 → 磨坊 → 面粉 → 面包房 → 面包。每个环节提升价值。</p></div>';
+h+='<div class="cd"><h3>🤖 升级</h3><p>稻草人 → 灌溉 → 肥料 → 温室 → 自动收割机 → 无人机群。逐步实现全自动。</p></div>';
+h+='<div class="cd"><h3>🧬 杂交</h3><p>不同作物种在<strong>相邻位置</strong>，收获时概率发现新品种。</p></div>';
+h+='<div class="cd"><h3>☀️ 季节</h3><p>每30分钟切换季节，影响作物生长。温室无视季节。</p></div>';
+h+='<div class="cd"><h3>🔄 转生</h3><p>累计足够金币后转生获得农场之心，永久+金币收入。</p></div>';
+h+='<div class="cd"><h3>📌 小贴士</h3>';
+h+='<p>· 注意土壤类型！匹配土壤生长+50%。</p>';
+h+='<p>· 加工品可卖给商人。随机事件带来惊喜。</p>';
+h+='<p>· 图鉴和成就记录探索进度。每30秒自动保存。</p>';
+h+='<p>· 在「⚙️ 系统」可导入/导出存档、切换主题。</p></div></div>';
+var ptut=document.getElementById("ptut");if(ptut)ptut.innerHTML=h;
+}function renderRelics(){var h='<div class="cd"><h3>🏺 远古遗迹</h3><p class="tt">收获时有概率发现远古遗物，提供永久加成</p>';if(!GS.relics||GS.relics.length===0){h+='<div class="sf">尚未发现任何遗迹。继续收获，或许某天会挖到什么...</div>';}else{h+='<div class="cg">';for(var i=0;i<GS.relics.length;i++){var rd=RELIC_DEFS[GS.relics[i]];h+='<div class="sl"><div style="font-size:2em">'+(rd.i||'🏺')+'</div><div>'+rd.n+'</div><div class="tt">'+rd.d+'</div></div>';}h+='</div>';var missing=Object.keys(RELIC_DEFS).length-GS.relics.length;h+='<div class="tt" style="text-align:center;margin-top:8px">已发现 '+GS.relics.length+'/'+Object.keys(RELIC_DEFS).length+' 个遗迹'+(missing>0?'，还有 '+missing+' 个等待发现':' ✅ 全部收集！')+'</div>';}h+='</div>';var pr=document.getElementById("pr");if(pr)pr.innerHTML=h;}
+function renderInventory(){
+var h='<div class="cd"><h3>📦 资源库存</h3><div class="cg">';
+var invItems=[{k:'seeds',n:'种子',i:'🌱',v:4},{k:'wheat',n:'小麦',i:'🌾',v:10},{k:'carrot',n:'胡萝卜',i:'🥕',v:16},{k:'potato',n:'土豆',i:'🥔',v:25},{k:'corn',n:'玉米',i:'🌽',v:50},{k:'pumpkin',n:'南瓜',i:'🎃',v:100},{k:'strawberry',n:'草莓',i:'🍓',v:70},{k:'tomato',n:'番茄',i:'🍅',v:35},{k:'pepper',n:'辣椒',i:'🌶',v:40},{k:'egg',n:'鸡蛋',i:'🥚',v:15},{k:'milk',n:'牛奶',i:'🥛',v:40},{k:'wool',n:'羊毛',i:'🧶',v:60},{k:'truffle',n:'松露',i:'🍄',v:150},{k:'flour',n:'面粉',i:'🌾📦',v:20},{k:'bread',n:'面包',i:'🍞',v:60},{k:'cheese',n:'奶酪',i:'🧀',v:100},{k:'cloth',n:'布料',i:'👘',v:150},{k:'smoked_pumpkin',n:'烟熏南瓜',i:'🔥🎃',v:200},{k:'corn_wine',n:'玉米酒',i:'🍺🌽',v:180},{k:'strawberry_jam',n:'草莓果酱',i:'🍯🍓',v:220}];
+var hasAny=false;
+for(var ii=0;ii<invItems.length;ii++){
+var it=invItems[ii];var qty=GS.inventory[it.k]||0;
+if(qty>0)hasAny=true;
+var sv=Math.floor(it.v*(1+GS.prestigePoints*0.1));
+h+='<div class="sl'+(qty>0?'':' lk')+'" style="min-height:115px"><div style="font-size:2.2em">'+it.i+'</div><div style="font-weight:bold">'+it.n+'</div><div style="font-size:1.3em;color:#ffd700;margin:4px 0">x'+qty+'</div><div class="tt">单价:'+sv+'💰</div>';
+if(qty>0){
+h+='<div style="margin-top:5px">';
+h+='<button class="bt sm gn" onclick="window._sellK=\x27'+it.k+'\x27;window._sellQ=1;sellItem(window._sellK,window._sellQ)" style="font-size:.65em;padding:2px 6px">卖1</button> ';
+if(qty>=10)h+='<button class="bt sm gn" onclick="window._sellK=\x27'+it.k+'\x27;window._sellQ=10;sellItem(window._sellK,window._sellQ)" style="font-size:.65em;padding:2px 6px">卖10</button> ';
+h+='<button class="bt sm rd" onclick="window._sellK=\x27'+it.k+'\x27;window._sellQ='+qty+';sellItem(window._sellK,window._sellQ)" style="font-size:.65em;padding:2px 6px">卖全部</button>';
+h+='</div>';
+}
+h+='</div>';
+}
+if(!hasAny)h+='<div style="text-align:center;padding:20px;color:#999">📭 暂无库存，收获作物或动物产品后将显示在这里。</div>';
+h+='</div></div>';
+var pinv=document.getElementById("pinv");if(pinv)pinv.innerHTML=h;
+}
+function sellItem(k,q){
+if(!GS.inventory[k]||GS.inventory[k]<q){notify("库存不足！");return;}
+GS.inventory[k]-=q;
+var sellPrice=0;
+var items=[{k:'seeds',v:4},{k:'wheat',v:10},{k:'carrot',v:16},{k:'potato',v:25},{k:'corn',v:50},{k:'pumpkin',v:100},{k:'strawberry',v:70},{k:'tomato',v:35},{k:'pepper',v:40},{k:'egg',v:15},{k:'milk',v:40},{k:'wool',v:60},{k:'truffle',v:150},{k:'flour',v:20},{k:'bread',v:60},{k:'cheese',v:100},{k:'cloth',v:150},{k:'smoked_pumpkin',v:200},{k:'corn_wine',v:180},{k:'strawberry_jam',v:220}];
+for(var i=0;i<items.length;i++){if(items[i].k===k){sellPrice=items[i].v;break;}}
+var total=Math.floor(sellPrice*q*(1+GS.prestigePoints*0.1));
+GS.coins+=total;GS.totalCoinsEarned+=total;
+notify("出售 "+q+"x 获得 +"+total+"💰");
+renderInventory();renderFarm();R();
+}
+
+function renderSystem(){
+var h='<div class="cd"><h3>⚙️ 系统</h3>';
+h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
+h+='<button class="bt sm" onclick="manualSave()" id="btnSave">💾 保存进度</button>';
+h+='<button class="bt sm bl" onclick="showLog()">📋 通知历史</button>';
+h+='<button class="bt sm rd" onclick="resetGame()">🗑 删除存档</button>';
+h+='</div>';
+h+='<div class="cd"><h4>📤 导入/导出存档</h4>';
+h+='<button class="bt sm" onclick="exportSave()" style="margin-right:8px">📋 复制存档到剪切板</button>';
+h+='<button class="bt sm bl" onclick="importSavePrompt()">📥 从剪切板导入</button>';
+h+='<textarea id="saveDataArea" style="width:100%;height:80px;margin-top:6px;font-size:.7em;background:rgba(0,0,0,.3);color:#ccc;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:6px;font-family:monospace" placeholder="粘贴存档数据到此处然后点击导入..."></textarea>';
+h+='</div>';
+h+='<div class="cd"><h4>🎨 主题设置</h4>';
+h+='<p class="tt" style="margin:4px 0">当前: <span id="themeLabel">🌙 深色</span></p>';
+h+='<button class="bt sm" onclick="toggleTheme()" id="btnTheme">☀️ 切换浅色模式</button>';
+h+='</div>';
+h+='<div class="tt sb">每30秒自动保存 | 刷新页面继续游戏</div>';
+h+='</div>';
+var psys=document.getElementById("psys");if(psys){var ta=document.getElementById("saveDataArea");var wasFocused=ta&&document.activeElement===ta;var oldVal=wasFocused?ta.value:"";psys.innerHTML=h;if(wasFocused){var ta2=document.getElementById("saveDataArea");if(ta2){ta2.value=oldVal;ta2.focus();}}}
+}
+function exportSave(){
+var raw=JSON.stringify(GS);
+var ta=document.getElementById("saveDataArea");
+if(ta)ta.value=raw;
+try{
+var ta2=document.createElement("textarea");
+ta2.value=raw;ta2.style.position="fixed";ta2.style.opacity="0";
+document.body.appendChild(ta2);ta2.select();
+document.execCommand("copy");document.body.removeChild(ta2);
+notify("✅ 存档已复制到剪切板！");
+}catch(e){notify("⚠️ 复制失败，请手动复制上方文本框内容");}
+}
+function importSavePrompt(){
+var ta=document.getElementById("saveDataArea");
+if(!ta||!ta.value.trim()){notify("⚠️ 请先粘贴存档数据到文本框");return;}
+try{
+var d=JSON.parse(ta.value.trim());
+if(!d||typeof d!=="object"||typeof d.coins!=="number"){notify("❌ 无效的存档数据");return;}
+Object.assign(GS,d);
+for(var pk in PROC_DEFS){if(!GS.processors[pk])GS.processors[pk]={owned:false,level:1,busy:false,timer:0};}
+if(!GS.relics)GS.relics=[];
+if(!GS.discoveredHybrids)GS.discoveredHybrids=[];
+if(!GS.discoveredAnimals)GS.discoveredAnimals=[];
+if(!GS._seenEvents)GS._seenEvents=[];
+if(!GS._seenWeather)GS._seenWeather=["sunny"];
+if(!GS._seenSeasons)GS._seenSeasons=["spring"];
+if(typeof GS.scarecrowOn==="undefined")GS.scarecrowOn=true;
+GS.maxLand=20+Math.floor((GS.prestigePoints||0)/2);
+while(GS.land.length<GS.maxLand){var soils=["normal","clay","sand","dark"];GS.land.push({id:GS.land.length,unlocked:false,soil:soils[GS.land.length%4]});}
+saveGame();renderAll();
+notify("✅ 存档导入成功！游戏已恢复。");
+}catch(e){notify("❌ 存档解析失败："+e.message);}
+}
+function toggleTheme(){
+var b=document.body;
+var label=document.getElementById("themeLabel");
+var btn=document.getElementById("btnTheme");
+var cn=b.className;
+if((" "+cn+" ").indexOf(" light ")!==-1){
+b.className=cn.replace(" light","").replace("light ","").replace("light","");
+localStorage.setItem("farm_theme","dark");
+if(label)label.textContent="🌙 深色";
+if(btn)btn.textContent="☀️ 切换浅色模式";
+}else{
+b.className=cn+" light";
+localStorage.setItem("farm_theme","light");
+if(label)label.textContent="☀️ 浅色";
+if(btn)btn.textContent="🌙 切换深色模式";
+}
+}
+(function(){if(localStorage.getItem("farm_theme")==="light"){document.body.className=document.body.className+" light";}})();
+function renderAll(){R();renderFarm();renderAnimals();renderProc();renderUpgrades();renderTrade();renderBestiary();renderAch();renderJournal();renderPrestige();renderRelics();renderTutorial();renderInventory();renderSystem();}
 function findActEl(t,c){var e=t;while(e&&e!==c){if(e.nodeType===1&&e.getAttribute("data-action")!==null)return e;e=e.parentNode;}if(e===c&&e.nodeType===1&&e.getAttribute("data-action")!==null)return e;return null;}// === Event Delegation ===
 (function(){
 var pf=document.getElementById("pf");
@@ -146,7 +274,7 @@ for(var i=0;i<allTabs.length;i++)allTabs[i].classList.remove("ac");
 t.classList.add("ac");
 var panels=document.querySelectorAll(".pn");
 for(var j=0;j<panels.length;j++)panels[j].classList.remove("ac");
-var panelMap={farm:"pf",animals:"pa",process:"pp",upgrades:"pu",trade:"pt",bestiary:"pb",achievements:"pach",journal:"pj",prestige:"ppr",relics:"pr",tutorial:"ptut"};
+var panelMap={farm:"pf",animals:"pa",process:"pp",upgrades:"pu",trade:"pt",bestiary:"pb",achievements:"pach",journal:"pj",prestige:"ppr",relics:"pr",tutorial:"ptut",inventory:"pinv",system:"psys"};
 var targetEl=document.getElementById(panelMap[pn]);
 if(targetEl)targetEl.classList.add("ac");
 });
@@ -162,7 +290,7 @@ tick(dt);
 _renderInterval+=dt;
 if(_renderInterval>=0.3){
 _renderInterval=0;
-renderFarm();R();renderAnimals();renderProc();renderUpgrades();renderTrade();renderBestiary();renderAch();renderJournal();renderPrestige();renderRelics();
+renderFarm();R();renderAnimals();renderProc();renderUpgrades();renderTrade();renderBestiary();renderAch();renderJournal();renderPrestige();renderRelics();renderInventory();renderSystem();
 }
 autoSaveTimer+=dt;
 if(autoSaveTimer>=30){autoSaveTimer=0;saveGame();}
