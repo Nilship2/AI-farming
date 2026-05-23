@@ -547,13 +547,38 @@ window.rejectOffer = function(idx) {
 // ===================================================================
 (function() {
     var tooltip = null;
+    var lastGrEl = null;
+    function getTooltip() {
+        if (!tooltip) {
+            tooltip = document.createElement("div");
+            tooltip.id = "growthTooltip";
+            tooltip.style.cssText = "position:fixed;z-index:9999;background:rgba(30,30,30,.95);color:#e0e0e0;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);box-shadow:0 4px 20px rgba(0,0,0,.5);min-width:200px;pointer-events:none;font-size:.8em;display:none";
+            document.body.appendChild(tooltip);
+        }
+        return tooltip;
+    }
     function hideTooltip() {
-        if (tooltip) { tooltip.parentNode.removeChild(tooltip); tooltip = null; }
+        var t = getTooltip();
+        t.style.display = "none";
+        lastGrEl = null;
     }
     function showTooltip(grEl, e) {
-        hideTooltip();
+        if (grEl === lastGrEl) {
+            // Same element, just reposition
+            var t = getTooltip();
+            var x = e.clientX + 15;
+            var y = e.clientY - 10;
+            if (x + t.offsetWidth > window.innerWidth) x = e.clientX - t.offsetWidth - 15;
+            if (y + t.offsetHeight > window.innerHeight) y = window.innerHeight - t.offsetHeight - 5;
+            if (x < 5) x = 5;
+            if (y < 5) y = 5;
+            t.style.left = x + "px";
+            t.style.top = y + "px";
+            return;
+        }
+        lastGrEl = grEl;
         var info = grEl.getAttribute("data-gr-info");
-        if (!info) return;
+        if (!info) { hideTooltip(); return; }
         var parts = info.split("|");
         var base = parseFloat(parts[0]);
         var upgSum = parseFloat(parts[1]);
@@ -605,22 +630,18 @@ window.rejectOffer = function(idx) {
         h += "<div style='border-top:1px solid rgba(255,255,255,.2);margin-top:4px;padding-top:4px;font-weight:bold'>\u5408\u8BA1: <span style='color:#ffd700;font-size:1.1em'>x" + total.toFixed(2) + "</span></div>";
         h += "</div>";
         
-        tooltip = document.createElement("div");
-        tooltip.id = "growthTooltip";
-        tooltip.style.cssText = "position:fixed;z-index:9999;background:rgba(30,30,30,.95);color:#e0e0e0;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);box-shadow:0 4px 20px rgba(0,0,0,.5);min-width:200px;pointer-events:none;font-size:.8em";
-        tooltip.innerHTML = h;
-        document.body.appendChild(tooltip);
+        var t = getTooltip();
+        t.innerHTML = h;
+        t.style.display = "block";
         
         var x = e.clientX + 15;
         var y = e.clientY - 10;
-        var tw = tooltip.offsetWidth;
-        var th = tooltip.offsetHeight;
-        if (x + tw > window.innerWidth) x = e.clientX - tw - 15;
-        if (y + th > window.innerHeight) y = window.innerHeight - th - 5;
+        if (x + t.offsetWidth > window.innerWidth) x = e.clientX - t.offsetWidth - 15;
+        if (y + t.offsetHeight > window.innerHeight) y = window.innerHeight - t.offsetHeight - 5;
         if (x < 5) x = 5;
         if (y < 5) y = 5;
-        tooltip.style.left = x + "px";
-        tooltip.style.top = y + "px";
+        t.style.left = x + "px";
+        t.style.top = y + "px";
     }
     
     var pf = document.getElementById("pf");
@@ -650,6 +671,26 @@ window.rejectOffer = function(idx) {
         });
     }
 })();
+
+
+// ===================================================================
+// 20. \u9632\u6B62\u6587\u5B57\u9009\u4E2D\u548C\u56FE\u7247\u62D6\u62FD
+// ===================================================================
+(function() {
+    document.addEventListener("selectstart", function(e) {
+        e.preventDefault();
+    });
+    document.addEventListener("dragstart", function(e) {
+        e.preventDefault();
+    });
+    // \u9632\u6B62\u53CC\u51FB\u9009\u4E2D\u6587\u5B57
+    document.addEventListener("mousedown", function(e) {
+        if (e.detail > 1) {
+            e.preventDefault();
+        }
+    });
+})();
+
 
 
 })();
