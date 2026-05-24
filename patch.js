@@ -1,4 +1,4 @@
-// patch.js — 农场增量功能增强 v2
+﻿// patch.js — 农场增量功能增强 v2
 (function() {
 
 // ===================================================================
@@ -360,7 +360,7 @@ renderFarm = function() {
                 {k:'wheat',icon:'🌾',n:'小麦',v:10},{k:'carrot',icon:'🥕',n:'胡萝卜',v:16},
                 {k:'potato',icon:'🥔',n:'土豆',v:25},{k:'corn',icon:'🌽',n:'玉米',v:50},
                 {k:'pumpkin',icon:'🎃',n:'南瓜',v:100},{k:'strawberry',icon:'🍓',n:'草莓',v:70},
-                {k:'tomato',icon:'🍅',n:'番茄',v:35},{k:'pepper',icon:'🌶️',n:'辣椒',v:40},
+                {k:'tomato',icon:'🍅',n:'番茄',v:35},{k:'pepper',icon:'🌶️',n:'辣椒',v:40},{k:'blueberry',icon:'🫐',n:'蓝莓',v:60},{k:'watermelon',icon:'🍉',n:'西瓜',v:160},{k:'grape',icon:'🍇',n:'葡萄',v:130},{k:'sunflower',icon:'🌻',n:'向日葵',v:45},
                 {k:'egg',icon:'🥚',n:'鸡蛋',v:15},{k:'milk',icon:'🥛',n:'牛奶',v:40},
                 {k:'wool',icon:'🧶',n:'羊毛',v:60},{k:'truffle',icon:'🍄',n:'松露',v:150},
                 {k:'flour',icon:'🌾📦',n:'面粉',v:20},{k:'bread',icon:'🍞',n:'面包',v:60},
