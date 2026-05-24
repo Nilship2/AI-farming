@@ -464,10 +464,10 @@ renderAnimals = function() {
             gm2 += gmUpg;
             var gmWeather = 0;
             if (GS.weather === "rainy") gmWeather = 0.3;
-            if (GS.weather === "sunny") gmWeather = 0.1;
+            if (GS.weather === "sunny") gmWeather = 0.1;if (GS.weather === "storm") gmWeather = -0.4;
             gm2 += gmWeather;
-            if (GS.relics) { for (var gri = 0; gri < GS.relics.length; gri++) { var grd = RELIC_DEFS[GS.relics[gri]]; if (grd && grd.ef === "grow") gm2 += grd.v; } }
-            var sb2 = {wheat:"spring",corn:"summer",pumpkin:"autumn",potato:"winter"};
+            var gmRelic=0;var relicGrowNames=[];if(GS.relics){for(var gri=0;gri<GS.relics.length;gri++){var grd=RELIC_DEFS[GS.relics[gri]];if(grd&&grd.ef==="grow"){gm2+=grd.v;gmRelic+=grd.v;relicGrowNames.push(grd.n+"+"+grd.v.toFixed(2));}}}
+            var gmGem=0;var gemGrowNames=[];if(GS.gemUpgrades){for(var ggi in GEM_UPG_DEFS){if(GS.gemUpgrades[ggi]&&GEM_UPG_DEFS[ggi].ef==="grow"){gm2+=GEM_UPG_DEFS[ggi].v;gmGem+=GEM_UPG_DEFS[ggi].v;gemGrowNames.push(GEM_UPG_DEFS[ggi].n+"+"+GEM_UPG_DEFS[ggi].v.toFixed(2));}}}var sb2 = {wheat:"spring",corn:"summer",pumpkin:"autumn",potato:"winter"};
             var so2 = !sb2[s2.crop.id] || sb2[s2.crop.id] === SNAMES[GS.season];
             var seasonMul = gh2 ? 1 : (so2 ? 1 : 0.5);
             var m2 = gh2 ? gm2 : (so2 ? gm2 : gm2 * 0.5);
@@ -476,11 +476,11 @@ renderAnimals = function() {
             var wName = wi2[GS.weather] || GS.weather;
             var sName = SICONS[GS.season] || SNAMES[GS.season];
             var soName = soilName2(s2.soil);
-            var info = "1.0|" + gmUpg.toFixed(1) + "|" + gmWeather.toFixed(1) + wName + "|" + seasonMul.toFixed(1) + sName + "|" + soilMul.toFixed(1) + soName + "|" + (gh2?"1":"0") + "|" + m2.toFixed(2);
+            var info = "1.0|" + gmUpg.toFixed(1) + "|" + gmWeather.toFixed(1) + wName + "|" + gmRelic.toFixed(2) + "|" + gmGem.toFixed(2) + "|" + seasonMul.toFixed(1) + sName + "|" + soilMul.toFixed(1) + soName + "|" + (gh2?"1":"0") + "|" + m2.toFixed(2);
             var grEl = document.createElement("div");
             grEl.className = "tt growRate";
             grEl.setAttribute("data-gr-info", info);
-            if (upgNames.length > 0) grEl.setAttribute("data-gr-upg", upgNames.join(","));
+            if (upgNames.length > 0) grEl.setAttribute("data-gr-upg", upgNames.join(","));if(relicGrowNames.length>0)grEl.setAttribute("data-gr-relic",relicGrowNames.join(","));if(gemGrowNames.length>0)grEl.setAttribute("data-gr-gem",gemGrowNames.join(","));
             grEl.style.cssText = "color:#4fc3f7;margin-top:2px;font-size:.7em;cursor:help";
             grEl.textContent = "🌱x" + m2.toFixed(1);
             slot.appendChild(grEl);
@@ -583,10 +583,10 @@ window.rejectOffer = function(idx) {
         var base = parseFloat(parts[0]);
         var upgSum = parseFloat(parts[1]);
         var weatherStr = parts[2];
-        var seasonStr = parts[3];
-        var soilStr = parts[4];
-        var hasGH = parts[5] === "1";
-        var total = parseFloat(parts[6]);
+        var relicStr = parts[3];var gemStr = parts[4];var seasonStr = parts[5];
+        var soilStr = parts[6];
+        var hasGH = parts[7] === "1";
+        var total = parseFloat(parts[8]);
         var upgNames = grEl.getAttribute("data-gr-upg") || "";
         
         var h = "<div style='font-size:.85em;line-height:1.6'>";
@@ -605,11 +605,13 @@ window.rejectOffer = function(idx) {
         var wn = weatherStr.replace(/^[\d.]+/, "");
         if (wv > 0) {
             h += "<div>\u5929\u6C14: " + wn + " <span style='color:#4fc3f7'>+" + wv.toFixed(1) + "</span></div>";
+        } else if (wv < 0) {
+            h += "<div>\u5929\u6C14: " + wn + " <span style='color:#ef5350'>" + wv.toFixed(1) + "</span></div>";
         } else {
             h += "<div>\u5929\u6C14: " + wn + " <span style='color:#888'>\u65E0\u52A0\u6210</span></div>";
         }
         
-        var sv = parseFloat(seasonStr);
+        var rv=parseFloat(relicStr);if(rv>0){var relicNames=grEl.getAttribute("data-gr-relic")||"";if(relicNames){var rnames=relicNames.split(",");for(var rni=0;rni<rnames.length;rni++){h+="<div style='color:#ce93d8'>  🏺遗物: "+rnames[rni]+"</div>";}}h+="<div>遗物合计: <span style='color:#ce93d8'>+"+rv.toFixed(2)+"</span></div>";}var gv=parseFloat(gemStr);if(gv>0){var gemNames=grEl.getAttribute("data-gr-gem")||"";if(gemNames){var gnames=gemNames.split(",");for(var gni=0;gni<gnames.length;gni++){h+="<div style='color:#ba68c8'>  💎宝石: "+gnames[gni]+"</div>";}}h+="<div>宝石合计: <span style='color:#ba68c8'>+"+gv.toFixed(2)+"</span></div>";}var sv = parseFloat(seasonStr);
         var sn = seasonStr.replace(/^[\d.]+/, "");
         if (hasGH) {
             h += "<div>\u5B63\u8282: <span style='color:#ce93d8'>\u6E29\u5BA4\u65E0\u89C6\u5B63\u8282</span> x1.0</div>";
