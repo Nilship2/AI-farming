@@ -1,0 +1,16 @@
+// 随机事件定义
+DataRegistry.registerAll("event", [
+    {id:"rain_bless",    n:"天降甘霖",   d:"雨水滋润了土地！",                    ef:function(){GS.weatherTimer=60;GS.weather="rainy";}},
+    {id:"rabbit_raid",   n:"兔子来袭",   d:"兔子偷吃了一些作物，但留下了兔毛可卖钱。", ef:function(){GS.coins+=Math.floor(Math.random()*200)+50;for(var i=0;i<GS.land.length;i++){var s=GS.land[i];if(s.crop&&Math.random()<0.15)s.crop.timer=Math.max(0,s.crop.timer-30);}notify("兔子留下了兔毛，+"+(Math.floor(Math.random()*200)+50)+"💰");}},
+    {id:"double_value",  n:"双倍市价日", d:"市场行情大涨！60秒内收获价值翻倍。",      ef:function(){window._doubleValue=true;window._doubleValueEnd=Date.now()+60000;setTimeout(function(){window._doubleValue=false;window._doubleValueEnd=0;},60000);}},
+    {id:"mystic_merch",  n:"神秘商人",   d:"一位神秘商人高价收购你的产品！",          ef:function(){var b=Math.floor(Math.random()*1000)+300;GS.coins+=b;GS.totalCoinsEarned+=b;notify("神秘商人给了你 "+b+"💰");}},
+    {id:"seed_bag",      n:"发现种子袋", d:"在田地边缘发现了被遗忘的种子！",          ef:function(){GS.inventory.seeds=(GS.inventory.seeds||0)+8;notify("获得 8 颗种子！");}},
+    {id:"friendly_neigh",n:"友善的邻居", d:"邻居老张送来了他培育的新品种！",           ef:function(){var allCrops=DataRegistry.ids("crop");var undiscovered=[];for(var i=0;i<allCrops.length;i++){if(GS.discoveredCrops.indexOf(allCrops[i])===-1)undiscovered.push(allCrops[i]);}if(undiscovered.length>0){var pick=undiscovered[Math.floor(Math.random()*undiscovered.length)];GS.discoveredCrops.push(pick);notify("解锁新作物："+DataRegistry.get("crop",pick).n);}else{GS.inventory.seeds=(GS.inventory.seeds||0)+20;notify("获得 20 颗种子！");}}},
+    {id:"pest_invasion", n:"害虫入侵",   d:"一群害虫袭击了农场，部分作物受损！",      ef:function(){for(var i=0;i<GS.land.length;i++){var s=GS.land[i];if(s.crop&&Math.random()<0.2)s.crop.timer=Math.max(0,s.crop.timer-60);}notify("害虫被驱散了，但一些作物受到了损伤。");}},
+    {id:"land_collapse", n:"土地塌陷",   d:"一块田地发生了塌陷！",                    ef:function(){for(var i=GS.land.length-1;i>=0;i--){if(GS.land[i].unlocked&&!GS.land[i].crop&&Math.random()<0.3){GS.land[i].unlocked=false;notify("一块土地塌陷了，需要重新解锁！");return;}}notify("地面震动了一下，但幸好没有土地受损。");}},
+    {id:"bird_raid",     n:"鸟群来袭",   d:"鸟群袭击了农田！种子被偷吃了。",          ef:function(){var lost=Math.floor(Math.random()*5)+1;GS.inventory.seeds=Math.max(0,(GS.inventory.seeds||0)-lost);notify("鸟群偷吃了 "+lost+" 颗种子！");}},
+    {id:"tool_sale",     n:"农具促销",   d:"镇上农具店大促销！升级成本临时降低。",     ef:function(){window._toolDiscount=true;setTimeout(function(){window._toolDiscount=false;},60000);}},
+    {id:"plant_mutation",n:"植物突变",   d:"一株作物发生了奇怪的变化，价值暴增！",     ef:function(){for(var i=0;i<GS.land.length;i++){var s=GS.land[i];if(s.crop&&Math.random()<0.3){var cd=DataRegistry.get("crop",s.crop.id);var bonus=cd?cd.v*2:80;GS.coins+=bonus;GS.totalCoinsEarned+=bonus;notify("突变作物价值 "+bonus+"💰！");return;}}notify("空气中弥漫着奇怪的味道，但什么也没发生。");}},
+    {id:"harvest_fest",  n:"丰收庆典",   d:"村民们举办丰收庆典，送来了礼物！",        ef:function(){GS.inventory.seeds=(GS.inventory.seeds||0)+15;GS.coins+=200;GS.totalCoinsEarned+=200;notify("获得 15 颗种子 + 200💰！");}},
+    {id:"harvest_goddess",n:"丰收女神的祝福",d:"丰收女神赐福！所有作物加速生长。",      ef:function(){for(var i=0;i<GS.land.length;i++){var s=GS.land[i];if(s.crop)s.crop.timer+=60;}notify("丰收女神加速了所有作物的生长！");}}
+]);

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -115,7 +115,27 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <div id="pinv" class="pn"></div>
 <div id="psys" class="pn"></div>
 <div class="sb">每30秒自动存档 | 刷新页面继续游戏</div>
-<script src="game.js"></script><script src="patch.js"></script>
+<!-- 数据注册中心 -->
+<script src="core/registry.js"></script>
+<!-- 数据定义文件 -->
+<script src="data/seasons.js"></script>
+<script src="data/soil.js"></script>
+<script src="data/weather.js"></script>
+<script src="data/crops.js"></script>
+<script src="data/hybrids.js"></script>
+<script src="data/animals.js"></script>
+<script src="data/processors.js"></script>
+<script src="data/upgrades.js"></script>
+<script src="data/relics.js"></script>
+<script src="data/gems.js"></script>
+<script src="data/achievements.js"></script>
+<script src="data/stories.js"></script>
+<script src="data/events.js"></script>
+<!-- Mod 文件（在引擎前加载，确保数据进入注册中心） -->
+<script src="mods/example.js"></script>
+<!-- 核心引擎（含兼容桥接层，从 DataRegistry 重建全局变量） -->
+<script src="core/engine.js"></script>
+<script src="patch.js"></script>
 
 <div id="detailOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column" onclick="closeDetail()">
 <div id="detailBox" style="background:#3d1c00;border:2px solid #8b5a2b;border-radius:14px;padding:24px;max-width:420px;width:90%;text-align:center;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()">
