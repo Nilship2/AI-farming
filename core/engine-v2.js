@@ -398,7 +398,7 @@ renderFarm = function(){
                 h+=' data-gr-relic="'+relicSum.toFixed(2)+'"';
                 var gemSum=0;if(GS.gemUpgrades)for(var gk in GEM_UPG_DEFS){var gd2=GEM_UPG_DEFS[gk];if(gd2.ef==="grow"){if(gd2.repeatable)gemSum+=(GS._refineCount||0)*gd2.v;else if(GS.gemUpgrades[gk])gemSum+=gd2.v;}}
                 h+=' data-gr-gem="'+gemSum.toFixed(2)+'"';
-                h+=' data-gr-season="'+seasonM+'" data-gr-soil="'+soilM+'" data-gr-hasGH="'+(GS.upgrades.greenhouse?"1":"0")+'"';
+                h+=' data-gr-season="'+seasonM+'" data-gr-soil="'+soilM+'" data-gr-hasGH="'+(GS.upgrades.greenhouse?"1":"0")+'"';var wn=GS.weather==="rainy"?"🌧️ 雨天":GS.weather==="sunny"?"☀️ 晴天":GS.weather==="storm"?"⛈️ 暴风雨":"☁️ 多云";var grInfo="1.0|"+upgSum.toFixed(1)+"|"+(GS.weather==="rainy"?0.3:GS.weather==="sunny"?0.1:GS.weather==="storm"?-0.4:0).toFixed(1)+wn+"|"+relicSum.toFixed(2)+"|"+gemSum.toFixed(2)+"|"+seasonM.toFixed(1)+(SICONS?SICONS[GS.season]:SNAMES[GS.season])+"|"+soilM.toFixed(1)+soilName(s.soil)+"|"+(GS.upgrades.greenhouse?"1":"0")+"|"+((GS.upgrades.greenhouse?1:seasonM)*soilM).toFixed(2);h+=' data-gr-info="'+grInfo+'"';
                 h+='>';
                 h+='<div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div>';
                 h+='<div class="pb"><div class="pf" style="width:'+(p*100)+'%"></div></div>';
