@@ -100,10 +100,51 @@ R = function() {
 // ===================================================================
 window.toggleScarecrow = function() {
     GS.scarecrowOn = !GS.scarecrowOn;
+    updateToggleButtons();
     R();
     notify(GS.scarecrowOn !== false ? "\u7a3b\u8349\u4eba\u5df2\u5f00\u542f" : "\u7a3b\u8349\u4eba\u5df2\u5173\u95ed");
 };
 
+window.toggleDrone = function() {
+    if (!GS.upgrades.drone) { notify("\u5148\u89e3\u9501\u65e0\u4eba\u673a\u5347\u7ea7\uff01"); return; }
+    GS.droneOn = GS.droneOn === false ? true : false;
+    updateToggleButtons();
+    R();
+    saveGame();
+    notify(GS.droneOn !== false ? "\u65e0\u4eba\u673a\u5df2\u542f\u7528" : "\u65e0\u4eba\u673a\u5df2\u5173\u95ed");
+};
+
+window.updateToggleButtons = function() {
+    var sb = document.getElementById("btnScarecrow");
+    if (sb) {
+        var on = GS.scarecrowOn !== false;
+        sb.textContent = (on ? "🤖 \u7a3b\u8349\u4eba: \u5f00" : "🤖 \u7a3b\u8349\u4eba: \u5173");
+        sb.className = "bt sm " + (on ? "gn" : "rd");
+    }
+    var db = document.getElementById("btnDrone");
+    if (db) {
+        if (!GS.upgrades.drone) {
+            db.style.display = "none";
+        } else {
+            db.style.display = "inline-block";
+            var don = GS.droneOn !== false;
+            db.textContent = "🛸 \u65e0\u4eba\u673a: " + (don ? "\u5f00" : "\u5173");
+            db.className = "bt sm " + (don ? "gn" : "rd");
+        }
+    }
+};
+
+
+// ===================================================================
+// 6b. R() post-process - update toggle buttons
+// ===================================================================
+(function() {
+    var _R_for_btns = R;
+    R = function() {
+        _R_for_btns();
+        if (typeof updateToggleButtons === "function") updateToggleButtons();
+    };
+})();
 // ===================================================================
 // 7. 手动保存 — saveGame 包装 + 按钮
 // ===================================================================
@@ -467,7 +508,7 @@ renderAnimals = function() {
             if (GS.weather === "sunny") gmWeather = 0.1;if (GS.weather === "storm") gmWeather = -0.4;
             gm2 += gmWeather;
             var gmRelic=0;var relicGrowNames=[];if(GS.relics){for(var gri=0;gri<GS.relics.length;gri++){var grd=RELIC_DEFS[GS.relics[gri]];if(grd&&grd.ef==="grow"){gm2+=grd.v;gmRelic+=grd.v;relicGrowNames.push(grd.n+"+"+grd.v.toFixed(2));}}}
-            var gmGem=0;var gemGrowNames=[];if(GS.gemUpgrades){for(var ggi in GEM_UPG_DEFS){if(GS.gemUpgrades[ggi]&&GEM_UPG_DEFS[ggi].ef==="grow"){gm2+=GEM_UPG_DEFS[ggi].v;gmGem+=GEM_UPG_DEFS[ggi].v;gemGrowNames.push(GEM_UPG_DEFS[ggi].n+"+"+GEM_UPG_DEFS[ggi].v.toFixed(2));}}}var sb2 = {wheat:"spring",corn:"summer",pumpkin:"autumn",potato:"winter"};
+            var gmGem=0;var gemGrowNames=[];if(GS.gemUpgrades){for(var ggi in GEM_UPG_DEFS){var _tgd=GEM_UPG_DEFS[ggi];if(_tgd.ef==="grow"){if(_tgd.repeatable){var _tv=(GS._refineCount||0)*_tgd.v;if(_tv>0){gm2+=_tv;gmGem+=_tv;gemGrowNames.push(_tgd.n+" x"+(GS._refineCount||0)+" +"+_tv.toFixed(2));}}else if(GS.gemUpgrades[ggi]){gm2+=_tgd.v;gmGem+=_tgd.v;gemGrowNames.push(_tgd.n+"+"+_tgd.v.toFixed(2));}}}}var sb2 = {wheat:"spring",corn:"summer",pumpkin:"autumn",potato:"winter"};
             var so2 = !sb2[s2.crop.id] || sb2[s2.crop.id] === SNAMES[GS.season];
             var seasonMul = gh2 ? 1 : (so2 ? 1 : 0.5);
             var m2 = gh2 ? gm2 : (so2 ? gm2 : gm2 * 0.5);

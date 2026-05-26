@@ -14,5 +14,5 @@ DataRegistry.registerAll("gemUpgrade", [
     {id:"timeHourglass", n:"时光沙漏",   i:"⏰", d:"后台速率+50%",  c:10, ef:"bgSpeed",       v:0.5},
     {id:"goldenLegend",  n:"金色传说",   i:"🌟", d:"出售价值+20%",  c:20, ef:"sellValue",     v:0.2},
     {id:"rareBreed",     n:"稀有品种",   i:"🦄", d:"杂交品收获量+1",c:20, ef:"hybridHarvest", v:1},
-    {id:"expandLand",    n:"拓展疆土",   i:"🏞️", d:"+1土地",       c:5,  ef:"land",          repeatable:true, costGrowth:3}
+    {id:"refineMaster",  n:"精益求精",   i:"📐", d:"生长速度+10%",  c:3,  ef:"grow",          v:0.10, repeatable:true, costGrowth:4}
 ]);
