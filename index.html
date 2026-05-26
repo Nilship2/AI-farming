@@ -101,6 +101,7 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <button class="tb" data-pn="achievements">成就</button>
 <button class="tb" data-pn="journal">日志</button>
 <button class="tb" data-pn="prestige">转生</button><button class="tb" data-pn="relics">🏺 遗物</button><button class="tb" data-pn="tutorial">❓ 教程</button>
+<button class="tb" data-pn="research">🔬 研究</button>
 <button class="tb" data-pn="inventory">📦 库存</button>
 <button class="tb" data-pn="system">⚙️ 系统</button>
 </div>
@@ -115,6 +116,7 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <div id="ppr" class="pn"></div><div id="pr" class="pn"></div><div id="ptut" class="pn"></div>
 <div id="pinv" class="pn"></div>
 <div id="psys" class="pn"></div>
+<div id="presearch" class="pn"></div>
 <div class="sb">每30秒自动存档 | 刷新页面继续游戏</div>
 <!-- 数据注册中心 -->
 <script src="core/registry.js"></script>
@@ -132,6 +134,9 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <script src="data/achievements.js"></script>
 <script src="data/stories.js"></script>
 <script src="data/events.js"></script>
+<script src="data/regions.js"></script>
+<script src="data/research.js"></script>
+<script src="data/research_upgrades.js"></script>
 <!-- Mod 清单 -->
 <script src="mods/manifest.js"></script>
 <!-- Mod 加载器（确定启用哪些 Mod） -->
@@ -139,8 +144,10 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <!-- Mod 脚本（静态加载，各自检查 __enabledMods 决定是否注册） -->
 <script src="mods/example.js"></script>
 <!-- 核心引擎 -->
+<script>window.__modSelectionPending = true;</script>
 <script src="core/engine.js"></script>
 <script src="patch.js"></script>
+<script src="core/engine-v2.js"></script>
 
 <div id="detailOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column" onclick="closeDetail()">
 <div id="detailBox" style="background:#3d1c00;border:2px solid #8b5a2b;border-radius:14px;padding:24px;max-width:420px;width:90%;text-align:center;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()">
