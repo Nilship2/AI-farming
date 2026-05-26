@@ -389,7 +389,7 @@ renderFarm = function(){
                 var soilM=getCropSoilMult(cd,s.soil);
                 var seasonM=getCropSeasonMult(cd,SNAMES[GS.season]);
                 var hc=getHarvestCount(cd);
-                h+='<div class="sl'+(rd2?' rd':'')+' growRate" data-action="'+(rd2?'harvest':'growing')+'" data-rid="'+regionId+'" data-sid="'+li+'"';
+                h+='<div class="sl'+(rd2?' rd':'')+'" data-action="'+(rd2?'harvest':'growing')+'" data-rid="'+regionId+'" data-sid="'+li+'"';
                 h+=' data-gr-base="1"';
                 var upgSum=0;for(var k2 in UPG_DEFS){if(GS.upgrades[k2]&&UPG_DEFS[k2].ef==="grow")upgSum+=UPG_DEFS[k2].v;}
                 h+=' data-gr-upg="'+upgSum.toFixed(2)+'"';
@@ -398,14 +398,14 @@ renderFarm = function(){
                 h+=' data-gr-relic="'+relicSum.toFixed(2)+'"';
                 var gemSum=0;if(GS.gemUpgrades)for(var gk in GEM_UPG_DEFS){var gd2=GEM_UPG_DEFS[gk];if(gd2.ef==="grow"){if(gd2.repeatable)gemSum+=(GS._refineCount||0)*gd2.v;else if(GS.gemUpgrades[gk])gemSum+=gd2.v;}}
                 h+=' data-gr-gem="'+gemSum.toFixed(2)+'"';
-                h+=' data-gr-season="'+seasonM+'" data-gr-soil="'+soilM+'" data-gr-hasGH="'+(GS.upgrades.greenhouse?"1":"0")+'"';var wn=GS.weather==="rainy"?"🌧️ 雨天":GS.weather==="sunny"?"☀️ 晴天":GS.weather==="storm"?"⛈️ 暴风雨":"☁️ 多云";var grInfo="1.0|"+upgSum.toFixed(1)+"|"+(GS.weather==="rainy"?0.3:GS.weather==="sunny"?0.1:GS.weather==="storm"?-0.4:0).toFixed(1)+wn+"|"+relicSum.toFixed(2)+"|"+gemSum.toFixed(2)+"|"+seasonM.toFixed(1)+(SICONS?SICONS[GS.season]:SNAMES[GS.season])+"|"+soilM.toFixed(1)+soilName(s.soil)+"|"+(GS.upgrades.greenhouse?"1":"0")+"|"+((GS.upgrades.greenhouse?1:seasonM)*soilM).toFixed(2);h+=' data-gr-info="'+grInfo+'"';
+                var grWeather=GS.weather==="rainy"?0.3:GS.weather==="sunny"?0.1:GS.weather==="storm"?-0.4:0;var grGH=GS.upgrades.greenhouse?1:0;var grResearch=0;if(GS.research&&GS.research.completed){if(GS.research.completed.indexOf("compost")!==-1)grResearch+=0.2;if(GS.research.completed.indexOf("cropRotate")!==-1)grResearch+=0.15;if(GS.research.completed.indexOf("deepPlow")!==-1)grResearch+=0.15;if(GS.research.completed.indexOf("ghOptimize")!==-1&&grGH)grResearch+=0.1;}var grGM=1+upgSum+grWeather+relicSum+gemSum+grResearch;var grTotal=grGM*(grGH?1:seasonM)*soilM;var grWN=GS.weather==="rainy"?"🌧️ 雨天":GS.weather==="sunny"?"☀️ 晴天":GS.weather==="storm"?"⛈️ 暴风雨":"☁️ 多云";var grInfo="1.0|"+upgSum.toFixed(1)+"|"+grWeather.toFixed(1)+grWN+"|"+relicSum.toFixed(2)+"|"+gemSum.toFixed(2)+"|"+seasonM.toFixed(1)+(SICONS?SICONS[GS.season]:SNAMES[GS.season])+"|"+soilM.toFixed(1)+soilName(s.soil)+"|"+(grGH?"1":"0")+"|"+grTotal.toFixed(2);h+=' data-gr-season="'+seasonM+'" data-gr-soil="'+soilM+'" data-gr-hasGH="'+(grGH?"1":"0")+'"';
                 h+='>';
                 h+='<div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div>';
                 h+='<div class="pb"><div class="pf" style="width:'+(p*100)+'%"></div></div>';
                 h+='<div class="tt">'+(rd2?'✔ 可收获！':Math.floor(cd.g-s.crop.timer)+'s')+'</div>';
                 h+='<div class="tt">土壤:'+soilName(s.soil)+' | 产出:'+hc+'个</div>';
                 if(!rd2){h+='<button class="bt sm bl" data-action="water" data-rid="'+regionId+'" data-sid="'+li+'" style="margin-top:3px;font-size:.65em">💧 浇水(+15s)</button>';}
-                h+='<button class="bt sm rd" data-action="shovel" data-rid="'+regionId+'" data-sid="'+li+'" style="margin-top:2px;font-size:.65em">🔧 铲除</button></div>';
+                h+='<button class="bt sm rd" data-action="shovel" data-rid="'+regionId+'" data-sid="'+li+'" style="margin-top:2px;font-size:.65em">🔧 铲除</button>';h+='<div class="tt growRate" data-gr-info="'+grInfo+'" style="color:#4fc3f7;margin-top:2px;font-size:.7em;cursor:help">⚡ x'+grTotal.toFixed(2)+'</div></div>';
             }else{
                 h+='<div class="sl" data-action="plant" data-rid="'+regionId+'" data-sid="'+li+'"><div style="font-size:2em">🌫</div><div>空地</div><div class="tt">点击种植</div><div class="tt">土壤:'+soilName(s.soil)+'</div></div>';
             }
