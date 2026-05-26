@@ -131,9 +131,13 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <script src="data/achievements.js"></script>
 <script src="data/stories.js"></script>
 <script src="data/events.js"></script>
-<!-- Mod 文件（在引擎前加载，确保数据进入注册中心） -->
+<!-- Mod 清单 -->
+<script src="mods/manifest.js"></script>
+<!-- Mod 加载器（确定启用哪些 Mod） -->
+<script src="core/mod-loader.js"></script>
+<!-- Mod 脚本（静态加载，各自检查 __enabledMods 决定是否注册） -->
 <script src="mods/example.js"></script>
-<!-- 核心引擎（含兼容桥接层，从 DataRegistry 重建全局变量） -->
+<!-- 核心引擎 -->
 <script src="core/engine.js"></script>
 <script src="patch.js"></script>
 
