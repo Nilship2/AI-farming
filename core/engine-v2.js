@@ -135,7 +135,7 @@ initGame = function(){
     if(!GS.discoveredHybrids)GS.discoveredHybrids=[];
     if(!GS.gemUpgrades)GS.gemUpgrades={};
     if(!GS.totalGemsEarned)GS.totalGemsEarned=0;
-    if(!GS.extraLand)GS.extraLand=0;GS.scarecrowOn=true;
+    if(!GS.extraLand)GS.extraLand=0;GS.scarecrowOn=true;GS.greenhouseOn=true;
     if(GS.upgrades.drone&&GS.droneOn===undefined)GS.droneOn=true;
     for(var _hk in HYBRID_DEFS){
         if(GS.discoveredHybrids.indexOf(_hk)!==-1&&!CROP_DEFS[_hk]){
@@ -353,19 +353,73 @@ function shovelCrop(regionId, slotId){
 }
 
 // ============================================================
+// Animal release
+// ============================================================
+function releaseAnimal(idx){
+    if(idx<0||idx>=GS.animals.length)return;
+    var a=GS.animals[idx];
+    var ad=ANIMAL_DEFS[a.id];
+    GS.animals.splice(idx,1);
+    notify("🐾 已放生 "+ad.i+" "+ad.n);
+    renderAnimals();R();
+}
+
+// ============================================================
+// Override renderAnimals — add release button
+// ============================================================
+renderAnimals = function(){
+    var h='<div class="cd"><h3>🐇 畜棚</h3><div class="tt">容量：'+GS.animals.length+'/'+GS.maxAnimals+'</div><div class="cg">';
+    for(var k in ANIMAL_DEFS){
+        var d=ANIMAL_DEFS[k];var ow=0;
+        for(var i=0;i<GS.animals.length;i++){if(GS.animals[i].id===k)ow++;}
+        var ul=GS.totalCoinsEarned>=d.unlock||GS.discoveredAnimals.indexOf(k)!==-1;
+        h+='<div class="sl'+(ul?'':' lk')+'"><div style="font-size:2em">'+d.i+'</div><div>'+d.n+'</div><div class="tt">产物:'+d.p.i+d.p.n+'</div><div class="tt">拥有:'+ow+' | 价格:'+d.c+'💰</div>'+(ul?'<button class="bt sm bl" data-action="buyAnimal" data-aid="'+k+'">购买</button>':'')+'</div>';
+    }
+    h+='</div></div>';
+    if(GS.animals.length>0){
+        h+='<div class="cd"><h3>我的动物</h3><div class="cg">';
+        for(var j=0;j<GS.animals.length;j++){
+            var a=GS.animals[j];var ad=ANIMAL_DEFS[a.id];var ap=Math.floor(a.af/a.am*100);
+            h+='<div class="sl'+(a.pr?' rd':'')+'" data-action="collectAnimal" data-aidx="'+j+'"><div style="font-size:2em">'+ad.i+'</div><div>'+ad.n+'</div><div class="pb"><div class="pf" style="width:'+(a.pr?100:Math.floor(a.pt/a.pi*100))+'%"></div></div><div class="tt">好感:'+(new Array(Math.ceil(ap/25)+1).join('❤️')||'🤍')+' '+ap+'%</div>'+(a.pr?'<div class="tt">✅ 可收取！</div>':'<div class="tt">'+Math.floor(a.pi-a.pt)+'s</div>')+'<button class="bt sm rd rmBtn" data-action="releaseAnimal" data-aidx="'+j+'">🐾 放生</button></div>';
+        }
+        h+='</div></div>';
+    }
+    var pa=document.getElementById("pa");if(pa)pa.innerHTML=h;
+};
+
+// ============================================================
+// renderSeedStore — rendered once, not re-rendered by game loop
+// ============================================================
+function renderSeedStore(){
+    var ss=document.getElementById("seedstore");
+    if(!ss||ss.innerHTML)return;
+    var h='<div class="cd"><h3>🌵 种子商店</h3>';
+    h+='<input type="number" id="seedBuyQty" value="1" min="1" max="9999" style="width:70px;padding:4px 6px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.3);color:#ffd700;font-size:.8em;text-align:center;font-family:inherit;margin-right:6px">';
+    h+='<button class="bt sm gn" id="btnSeedBuy" style="font-size:.75em">🌡 购买 (4💰/颗)</button></div>';
+    ss.innerHTML=h;
+    var btn=document.getElementById("btnSeedBuy");
+    var inp=document.getElementById("seedBuyQty");
+    if(btn)btn.onclick=function(){
+        var qty=inp?parseInt(inp.value)||1:1;
+        if(qty<1)qty=1;if(qty>9999)qty=9999;
+        buySeedsN(qty);renderFarm();R();
+    };
+    if(inp)inp.onkeydown=function(e){
+        if(e.key==="Enter"){e.preventDefault();
+            var qty=parseInt(this.value)||1;
+            if(qty<1)qty=1;if(qty>9999)qty=9999;
+            buySeedsN(qty);renderFarm();R();
+        }
+    };
+}
+
+// ============================================================
 // Override renderFarm — region-based
 // ============================================================
 renderFarm = function(){
     if(GS._planting&&typeof GS._planting==="object")return;
     if(typeof GS._planting==="number"&&GS._planting>=0)return;
     var h='';
-    h+='<div class="cd"><h3>🌵 种子商店</h3>';
-    h+='<button class="bt sm gn" data-action="buySeeds" data-n="1" style="font-size:.7em">🌡+1 (4💰)</button> ';
-    h+='<button class="bt sm gn" data-action="buySeeds" data-n="5" style="font-size:.7em">🌡+5 (20💰)</button> ';
-    h+='<button class="bt sm gn" data-action="buySeeds" data-n="20" style="font-size:.7em">🌡+20 (80💰)</button> ';
-    h+='<button class="bt sm gn" data-action="buySeeds" data-n="100" style="font-size:.7em">🌡+100 (400💰)</button> ';
-    h+='<button class="bt sm gn" data-action="buySeeds" data-n="500" style="font-size:.7em">🌡+500 (2000💰)</button></div>';
-
     var rids=DataRegistry.ids("region");
     for(var ri=0;ri<rids.length;ri++){
         var regionId=rids[ri];
@@ -398,7 +452,7 @@ renderFarm = function(){
                 h+=' data-gr-relic="'+relicSum.toFixed(2)+'"';
                 var gemSum=0;if(GS.gemUpgrades)for(var gk in GEM_UPG_DEFS){var gd2=GEM_UPG_DEFS[gk];if(gd2.ef==="grow"){if(gd2.repeatable)gemSum+=(GS._refineCount||0)*gd2.v;else if(GS.gemUpgrades[gk])gemSum+=gd2.v;}}
                 h+=' data-gr-gem="'+gemSum.toFixed(2)+'"';
-                var grWeather=GS.weather==="rainy"?0.3:GS.weather==="sunny"?0.1:GS.weather==="storm"?-0.4:0;var grGH=GS.upgrades.greenhouse?1:0;var grResearch=0;if(GS.research&&GS.research.completed){if(GS.research.completed.indexOf("compost")!==-1)grResearch+=0.2;if(GS.research.completed.indexOf("cropRotate")!==-1)grResearch+=0.15;if(GS.research.completed.indexOf("deepPlow")!==-1)grResearch+=0.15;if(GS.research.completed.indexOf("ghOptimize")!==-1&&grGH)grResearch+=0.1;}var grGM=1+upgSum+grWeather+relicSum+gemSum+grResearch;var grTotal=grGM*(grGH?1:seasonM)*soilM;var grWN=GS.weather==="rainy"?"🌧️ 雨天":GS.weather==="sunny"?"☀️ 晴天":GS.weather==="storm"?"⛈️ 暴风雨":"☁️ 多云";var grInfo="1.0|"+upgSum.toFixed(1)+"|"+grWeather.toFixed(1)+grWN+"|"+relicSum.toFixed(2)+"|"+gemSum.toFixed(2)+"|"+seasonM.toFixed(1)+(SICONS?SICONS[GS.season]:SNAMES[GS.season])+"|"+soilM.toFixed(1)+soilName(s.soil)+"|"+(grGH?"1":"0")+"|"+grTotal.toFixed(2);h+=' data-gr-season="'+seasonM+'" data-gr-soil="'+soilM+'" data-gr-hasGH="'+(grGH?"1":"0")+'"';
+                var grWeather=GS.weather==="rainy"?0.3:GS.weather==="sunny"?0.1:GS.weather==="storm"?-0.4:0;var grGH=(GS.upgrades.greenhouse&&GS.greenhouseOn!==false)?1:0;var grResearch=0;if(GS.research&&GS.research.completed){if(GS.research.completed.indexOf("compost")!==-1)grResearch+=0.2;if(GS.research.completed.indexOf("cropRotate")!==-1)grResearch+=0.15;if(GS.research.completed.indexOf("deepPlow")!==-1)grResearch+=0.15;if(GS.research.completed.indexOf("ghOptimize")!==-1&&grGH)grResearch+=0.1;}var grGM=1+upgSum+grWeather+relicSum+gemSum+grResearch;var grTotal=grGM*(grGH?1:seasonM)*soilM;var grWN=GS.weather==="rainy"?"🌧️ 雨天":GS.weather==="sunny"?"☀️ 晴天":GS.weather==="storm"?"⛈️ 暴风雨":"☁️ 多云";var grInfo="1.0|"+upgSum.toFixed(1)+"|"+grWeather.toFixed(1)+grWN+"|"+relicSum.toFixed(2)+"|"+gemSum.toFixed(2)+"|"+seasonM.toFixed(1)+(SICONS?SICONS[GS.season]:SNAMES[GS.season])+"|"+soilM.toFixed(1)+soilName(s.soil)+"|"+(grGH?"1":"0")+"|"+grTotal.toFixed(2);h+=' data-gr-season="'+seasonM+'" data-gr-soil="'+soilM+'" data-gr-hasGH="'+(grGH?"1":"0")+'"';
                 h+='>';
                 h+='<div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div>';
                 h+='<div class="pb"><div class="pf" style="width:'+(p*100)+'%"></div></div>';
@@ -436,7 +490,7 @@ renderFarm = function(){
             if(GS._seenWeather&&GS._seenWeather.indexOf(GS.weather)===-1){GS._seenWeather.push(GS.weather);notify("🔁 发现新天气："+GS.weather);}
             GS.weatherTimer=120+Math.random()*240;
         }
-        var gh=GS.upgrades.greenhouse,fa=GS.upgrades.drone;
+        var gh=GS.upgrades.greenhouse&&GS.greenhouseOn!==false,fa=GS.upgrades.drone;
         var gm=1;
         for(var k in UPG_DEFS){if(GS.upgrades[k]&&UPG_DEFS[k].ef==="grow")gm+=UPG_DEFS[k].v;}
         if(GS.research&&GS.research.completed){
@@ -604,7 +658,7 @@ function renderResearch(){
 // ============================================================
 renderAll = function(){
     R();
-    renderFarm();renderAnimals();renderProc();renderUpgrades();renderTrade();
+    renderFarm();renderSeedStore();renderAnimals();renderProc();renderUpgrades();renderTrade();
     renderBestiary();renderAch();renderJournal();renderPrestige();renderRelics();
     renderTutorial();renderInventory();renderSystem();renderResearch();
 };
@@ -649,11 +703,24 @@ renderAll = function(){
             var panelMap={farm:"pf",animals:"pa",process:"pp",upgrades:"pu",trade:"pt",bestiary:"pb",achievements:"pach",journal:"pj",prestige:"ppr",relics:"pr",tutorial:"ptut",research:"presearch",inventory:"pinv",system:"psys"};
             var targetEl=document.getElementById(panelMap[pn]);
             if(targetEl)targetEl.classList.add("ac");
+            var ss=document.getElementById("seedstore");
+            if(ss){if(pn==="farm")ss.classList.add("ac");else ss.classList.remove("ac");}
         });
     }
 })();
 
 // ============================================================
+// Event delegation — pa panel (add releaseAnimal)
+(function(){
+    var pa=document.getElementById("pa");
+    if(pa)pa.addEventListener("click",function(e){
+        var el=findActEl(e.target,this);if(!el)return;
+        var act=el.getAttribute("data-action");if(!act)return;
+        var aidx=el.getAttribute("data-aidx");
+        if(act==="releaseAnimal"){releaseAnimal(parseInt(aidx));}
+    });
+})();
+
 // Event delegation — research panel
 // ============================================================
 (function(){
@@ -667,6 +734,12 @@ renderAll = function(){
 })();
 
 // ============================================================
+// Prevent enter key in seed input from doing weird things
+(function(){
+    var si=document.getElementById("seedBuyQty");
+    if(si)si.addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();var bn=parseInt(this.value)||1;if(bn<1)bn=1;buySeedsN(bn);renderFarm();R();}});
+})();
+
 // Event delegation — pf panel (region-based + water/shovel)
 // ============================================================
 (function(){
@@ -682,6 +755,7 @@ renderAll = function(){
             else if(act==="unlock"){unlockLand(regionId,parseInt(sid));renderFarm();R();}
             else if(act==="plant"){showPlants(regionId,parseInt(sid));}
             else if(act==="buySeeds"){var bn=parseInt(el.getAttribute("data-n"))||5;buySeedsN(bn);renderFarm();R();}
+            else if(act==="buySeedsInput"){var qtyEl=document.getElementById("seedBuyQty");var qty=qtyEl?parseInt(qtyEl.value)||1:1;if(qty<1)qty=1;if(qty>9999)qty=9999;buySeedsN(qty);renderFarm();R();}
             else if(act==="doPlant"){doPlant(regionId,parseInt(sid),cid);}
             else if(act==="cancelPlant"){GS._planting=-1;renderFarm();R();}
             else if(act==="water"){waterCrop(regionId,parseInt(sid));renderFarm();R();}
@@ -691,8 +765,57 @@ renderAll = function(){
 })();
 
 // ============================================================
+// Greenhouse toggle
+// ============================================================
+window.toggleGreenhouse = function(){
+    if(!GS.upgrades.greenhouse){notify("请先解锁温室升级！");return;}
+    GS.greenhouseOn = GS.greenhouseOn===false ? true : false;
+    notify(GS.greenhouseOn!==false ? "🏠 温室已开启" : "🏠 温室已关闭");
+    saveGame();
+};
+(function(){
+    var _R_gh = R;
+    R = function(){
+        _R_gh();
+        var ghBtn = document.getElementById("btnGreenhouse");
+        if(ghBtn){
+            var on = GS.greenhouseOn !== false;
+            ghBtn.textContent = "🏠 温室: " + (on ? "开" : "关");
+            ghBtn.className = "bt sm" + (on ? " gn" : " rd");
+            ghBtn.style.display = GS.upgrades.greenhouse ? "inline-block" : "none";
+        }
+    };
+})();
+
+// ============================================================
 // Start the game
 // ============================================================
+// Inject greenhouse toggle button before game starts
+(function(){
+    var toggleDiv = document.getElementById("scarecrowToggle");
+    if(toggleDiv){
+        var ghBtn = document.createElement("button");
+        ghBtn.id = "btnGreenhouse";
+        ghBtn.className = "bt sm";
+        ghBtn.style.display = "none";
+        ghBtn.onclick = function(){ toggleGreenhouse(); };
+        toggleDiv.appendChild(document.createTextNode(" "));
+        toggleDiv.appendChild(ghBtn);
+    }
+})();
+
+// Inject seedstore div before pf
+(function(){
+    var pf=document.getElementById("pf");
+    if(pf){
+        var ss=document.createElement("div");
+        ss.id="seedstore";
+        ss.className="pn ac";
+        ss.style.cssText="margin:6px 0";
+        pf.parentNode.insertBefore(ss,pf);
+    }
+})();
+
 startGame();
 
 // ============================================================

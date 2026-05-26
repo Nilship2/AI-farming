@@ -668,9 +668,9 @@ window.rejectOffer = function(idx) {
         if (hasGH) {
             h += "<div>\u5B63\u8282: <span style='color:#ce93d8'>\u6E29\u5BA4\u65E0\u89C6\u5B63\u8282</span> x1.0</div>";
         } else if (sv >= 1) {
-            h += "<div>\u5B63\u8282: " + sn + " <span style='color:#81c784'>\u5B63\u8282\u9002\u5B9C</span> x1.0</div>";
+            h += "<div>\u5B63\u8282: " + sn + " <span style='color:#81c784'>\u5B63\u8282\u9002\u5B9C</span> x" + sv.toFixed(1) + "</div>";
         } else {
-            h += "<div>\u5B63\u8282: " + sn + " <span style='color:#ef5350'>\u53CD\u5B63\u8282</span> x0.5</div>";
+            h += "<div>\u5B63\u8282: " + sn + " <span style='color:#ef5350'>\u53CD\u5B63\u8282</span> x" + sv.toFixed(1) + "</div>";
         }
         
         var sov = parseFloat(soilStr);
