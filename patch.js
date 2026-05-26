@@ -519,8 +519,8 @@ renderAnimals = function() {
             if (GS.weather === "sunny") gmWeather = 0.1;if (GS.weather === "storm") gmWeather = -0.4;
             gm2 += gmWeather;
             var gmRelic=0;var relicGrowNames=[];if(GS.relics){for(var gri=0;gri<GS.relics.length;gri++){var grd=RELIC_DEFS[GS.relics[gri]];if(grd&&grd.ef==="grow"){gm2+=grd.v;gmRelic+=grd.v;relicGrowNames.push(grd.n+"+"+grd.v.toFixed(2));}}}
-            var gmGem=0;var gemGrowNames=[];if(GS.gemUpgrades){for(var ggi in GEM_UPG_DEFS){var _tgd=GEM_UPG_DEFS[ggi];if(_tgd.ef==="grow"){if(_tgd.repeatable){var _tv=(GS._refineCount||0)*_tgd.v;if(_tv>0){gm2+=_tv;gmGem+=_tv;gemGrowNames.push(_tgd.n+" x"+(GS._refineCount||0)+" +"+_tv.toFixed(2));}}else if(GS.gemUpgrades[ggi]){gm2+=_tgd.v;gmGem+=_tgd.v;gemGrowNames.push(_tgd.n+"+"+_tgd.v.toFixed(2));}}}}var sb2 = {wheat:"spring",corn:"summer",pumpkin:"autumn",potato:"winter"};
-            var so2 = !sb2[s2.crop.id] || sb2[s2.crop.id] === SNAMES[GS.season];
+            var gmGem=0;var gemGrowNames=[];if(GS.gemUpgrades){for(var ggi in GEM_UPG_DEFS){var _tgd=GEM_UPG_DEFS[ggi];if(_tgd.ef==="grow"){if(_tgd.repeatable){var _tv=(GS._refineCount||0)*_tgd.v;if(_tv>0){gm2+=_tv;gmGem+=_tv;gemGrowNames.push(_tgd.n+" x"+(GS._refineCount||0)+" +"+_tv.toFixed(2));}}else if(GS.gemUpgrades[ggi]){gm2+=_tgd.v;gmGem+=_tgd.v;gemGrowNames.push(_tgd.n+"+"+_tgd.v.toFixed(2));}}}}
+            var so2 = !cd3.season || cd3.season === SNAMES[GS.season];
             var seasonMul = gh2 ? 1 : (so2 ? 1 : 0.5);
             var m2 = gh2 ? gm2 : (so2 ? gm2 : gm2 * 0.5);
             var soilMul = 1;
