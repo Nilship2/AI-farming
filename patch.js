@@ -1,4 +1,4 @@
-﻿// patch.js — 农场增量功能增强 v2
+// patch.js — 农场增量功能增强 v2
 (function() {
 
 // ===================================================================
@@ -183,14 +183,14 @@ window.showDetail = function(type, id) {
         h += '<h2 style="color:#ffd700;margin:8px 0">' + cd.n + '</h2>';
         h += '<div class="tt" style="font-size:.9em">' + (discovered ? "\u2705 \u5df2\u53d1\u73b0" : "\u{1f512} \u672a\u53d1\u73b0") + '</div>';
         h += '<div style="margin-top:12px;line-height:1.8;font-size:.9em">';
-        h += '<div>\u{1f4e6} \u6536\u83b7\u4ea7\u51fa: <strong>2\u4e2a\u4f5c\u7269</strong></div>';
+        h += '<div>\u{1f4e6} \u6536\u83b7\u4ea7\u51fa: <strong>'+getHarvestAmt()+'\u4e2a\u4f5c\u7269</strong></div>';
         h += '<div>\u23f1 \u751f\u957f\u65f6\u95f4: <strong>' + cd.g + '\u79d2</strong></div>';
         if (cd.soil) h += '<div>\u{1f3f7} \u6700\u4f73\u571f\u58e4: <strong>' + (cd.soil==='clay'?'\u7c98\u571f\u5730':cd.soil==='sand'?'\u6c99\u5730':cd.soil==='dark'?'\u9ed1\u571f\u5730':'\u666e\u901a\u571f\u5730') + '</strong>\uff08\u751f\u957f\u901f\u5ea6+50%\uff09</div>';
         else h += '<div>\u{1f3f7} \u571f\u58e4: \u65e0\u7279\u6b8a\u8981\u6c42</div>';
         h += '<div>\u{1f4e6} \u5e93\u5b58: <strong>' + totalHarvested + ' \u4e2a</strong></div>';
         h += '<div>\u{1f4b0} \u89e3\u9501\u9700\u8981\u7d2f\u8ba1: <strong>' + cd.unlock + '\u91d1\u5e01</strong></div>';
         h += '<div>\u{1f331} \u79cd\u690d\u6210\u672c: \u7ea6 <strong>' + Math.ceil(cd.v * 0.25) + '</strong> \u79cd\u5b50</div>';
-        h += '<div>\u2728 \u6536\u83b7\u65f6: \u83b7\u5f972\u4e2a\u4f5c\u7269\u8d44\u6e90\uff0c30%\u6982\u7387\u8fd4\u8fd81\u9897\u79cd\u5b50</div>';
+        h += '<div>\u2728 \u6536\u83b7\u65f6: \u83b7\u5f97'+getHarvestAmt()+'\u4e2a\u4f5c\u7269\u8d44\u6e90\uff0c30%\u6982\u7387\u8fd4\u8fd81\u9897\u79cd\u5b50</div>';
         h += '</div>';
     } else if (type === "animal") {
         var ad = ANIMAL_DEFS[id];
@@ -221,6 +221,17 @@ window.showDetail = function(type, id) {
         h += '<div>\u{1f9ec} \u6742\u4ea4\u6982\u7387: <strong>' + Math.floor(hd.ch * 100) + '%</strong></div>';
         h += '<div>\u{1f331} \u9700\u8981\u76f8\u90bb\u79cd\u690d: <strong>' + (CROP_DEFS[hd.p[0]] ? CROP_DEFS[hd.p[0]].n : hd.p[0]) + ' + ' + (CROP_DEFS[hd.p[1]] ? CROP_DEFS[hd.p[1]].n : hd.p[1]) + '</strong></div>';
         h += '<div>\u{1f4b0} \u89e3\u9501\u9700\u8981\u7d2f\u8ba1: <strong>' + hd.unlock + '\u91d1\u5e01</strong></div>';
+        h += '</div>';
+    } else if (type === "event") {
+        var ed = null;
+        for (var ei = 0; ei < allEv.length; ei++) { if (allEv[ei].n === id) { ed = allEv[ei]; break; } }
+        if (!ed) return;
+        var ediscovered = GS._seenEvents && GS._seenEvents.indexOf(ed.n) !== -1;
+        h += '<div style="font-size:3em">' + (ed.i || '📢') + '</div>';
+        h += '<h2 style="color:#ffd700;margin:8px 0">' + ed.n + '</h2>';
+        h += '<div class="tt" style="font-size:.9em">' + (ediscovered ? '✅ 已见过' : '🔒 未见过') + '</div>';
+        h += '<div style="margin-top:12px;line-height:1.8;font-size:.9em">';
+        h += '<div>' + ed.d + '</div>';
         h += '</div>';
     }
 
