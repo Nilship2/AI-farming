@@ -79,6 +79,18 @@ body.light h4{color:#5a2d0c}
 body.light .sf{background:rgba(139,90,43,.12);color:#1a0f05}
 body.light [style*="color:#ffd700"]{color:#7a520e!important}
 body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
+
+/* mod editor */
+.me-form{display:flex;flex-direction:column;gap:8px}
+.me-form label{font-size:.8em;color:#aaa}
+.me-form input,.me-form select,.me-form textarea{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15);color:#f0e0c0;padding:6px 8px;border-radius:5px;font-size:.85em;font-family:inherit}
+.me-form input:focus,.me-form select:focus,.me-form textarea:focus{outline:none;border-color:#ffd700}
+.me-form textarea{resize:vertical;min-height:40px}
+.me-entry{border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:10px;margin:6px 0;background:rgba(0,0,0,.15)}
+.me-entry h4{color:#ffcc80;margin-bottom:6px;font-size:.9em}
+.me-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.me-row>*{flex:1;min-width:80px}
+.me-actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 </style>
 </head>
 <body>
@@ -104,6 +116,7 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <button class="tb" data-pn="research">🔬 研究</button>
 <button class="tb" data-pn="inventory">📦 库存</button>
 <button class="tb" data-pn="system">⚙️ 系统</button>
+<button class="tb" data-pn="modedit" id="tabModEdit" style="display:none">🔧 模组开发</button>
 </div>
 <div id="pf" class="pn ac"></div>
 <div id="pa" class="pn"></div>
@@ -116,6 +129,7 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <div id="ppr" class="pn"></div><div id="pr" class="pn"></div><div id="ptut" class="pn"></div>
 <div id="pinv" class="pn"></div>
 <div id="psys" class="pn"></div>
+<div id="pmodedit" class="pn"></div>
 <div id="presearch" class="pn"></div>
 <div class="sb">每30秒自动存档 | 刷新页面继续游戏</div>
 <!-- 数据注册中心 -->
@@ -148,6 +162,7 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <script src="core/engine.js"></script>
 <script src="patch.js"></script>
 <script src="core/engine-v2.js"></script>
+<script src="core/mod-editor.js"></script>
 
 <div id="detailOverlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column" onclick="closeDetail()">
 <div id="detailBox" style="background:#3d1c00;border:2px solid #8b5a2b;border-radius:14px;padding:24px;max-width:420px;width:90%;text-align:center;max-height:80vh;overflow-y:auto" onclick="event.stopPropagation()">

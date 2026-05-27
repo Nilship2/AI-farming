@@ -943,7 +943,7 @@ renderInventory = function(){
             t.classList.add("ac");
             var panels=document.querySelectorAll(".pn");
             for(var j=0;j<panels.length;j++)panels[j].classList.remove("ac");
-            var panelMap={farm:"pf",animals:"pa",process:"pp",upgrades:"pu",trade:"pt",bestiary:"pb",achievements:"pach",journal:"pj",prestige:"ppr",relics:"pr",tutorial:"ptut",research:"presearch",inventory:"pinv",system:"psys"};
+            var panelMap={farm:"pf",animals:"pa",process:"pp",upgrades:"pu",trade:"pt",bestiary:"pb",achievements:"pach",journal:"pj",prestige:"ppr",relics:"pr",tutorial:"ptut",research:"presearch",inventory:"pinv",system:"psys",modedit:"pmodedit"};
             var targetEl=document.getElementById(panelMap[pn]);
             if(targetEl)targetEl.classList.add("ac");
             var ss=document.getElementById("seedstore");

@@ -1,4 +1,4 @@
-// patch.js — 农场增量功能增强 v2
+﻿// patch.js — 农场增量功能增强 v2
 (function() {
 
 // ===================================================================
@@ -134,6 +134,29 @@ window.updateToggleButtons = function() {
     }
 };
 
+
+// ===================================================================
+// 7. Dev Mode toggle
+// ===================================================================
+window._devMode = false;
+window.toggleDevMode = function() {
+    window._devMode = !window._devMode;
+    var tab = document.getElementById("tabModEdit");
+    if (tab) tab.style.display = window._devMode ? "inline-block" : "none";
+    var btn = document.getElementById("btnDevMode");
+    if (btn) btn.textContent = "\u{1f6e0} \u5f00\u53d1\u8005\u6a21\u5f0f: " + (window._devMode ? "\u5f00" : "\u5173");
+    // If dev mode turned off while on mod edit tab, switch to farm
+    if (!window._devMode) {
+        var pmod = document.getElementById("pmodedit");
+        if (pmod && pmod.classList.contains("ac")) {
+            var tabs = document.querySelectorAll(".tb");
+            for (var t = 0; t < tabs.length; t++) {
+                if (tabs[t].getAttribute("data-pn") === "farm") { tabs[t].click(); break; }
+            }
+        }
+    }
+    if (typeof renderSystem === "function") renderSystem();
+};
 
 // ===================================================================
 // 6b. R() post-process - update toggle buttons

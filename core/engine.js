@@ -157,7 +157,7 @@ var h='<div class="cd"><h3>⚙️ 系统</h3>';
 h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
 h+='<button class="bt sm" onclick="manualSave()" id="btnSave">💾 保存进度</button>';
 h+='<button class="bt sm bl" onclick="showLog()">📋 通知历史</button>';
-h+='<button class="bt sm rd" onclick="resetGame()">🗑 删除存档</button>';
+h+='<button class="bt sm rd" onclick="resetGame()">🗑 删除存档</button>';h+='<button class="bt sm pu" onclick="toggleDevMode()" id="btnDevMode" style="font-size:.75em">🛠 开发者模式: 关</button>';
 h+='</div>';
 h+='<div class="cd"><h4>📤 导入/导出存档</h4>';
 h+='<button class="bt sm" onclick="exportSave()" style="margin-right:8px">📋 复制存档到剪切板</button>';
