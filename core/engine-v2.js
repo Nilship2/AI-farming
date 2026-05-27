@@ -815,6 +815,7 @@ renderAll = function(){
             if(d.reqResearch){
                 if(!GS.research||!GS.research.completed||GS.research.completed.indexOf(d.reqResearch)===-1)continue;
             }
+            if(d.reqUpgrade&&!GS.upgrades[d.reqUpgrade])continue;
             var ow=GS.upgrades[k];
             var ul=GS.totalCoinsEarned>=d.unlock;
             h+='<div class="sl'+(ow?' rd':'')+(!ul&&!ow?' lk':'')+'"><div style="font-size:2em">'+d.i+'</div><div>'+d.n+'</div><div class="tt">'+d.d+'</div>'+(ow?'<div style="color:#66bb6a">✅ 已拥有</div>':ul?'<button class="bt sm bl" data-action="buyUpgrade" data-uid="'+k+'">购买 ('+d.c+'💰)</button>':'<div class="tt">需累计 '+d.unlock+'💰</div>')+'</div>';
@@ -823,6 +824,109 @@ renderAll = function(){
         var pu=document.getElementById("pu");if(pu)pu.innerHTML=h;
     };
 })();
+// ============================================================
+// ============================================================
+// Override renderInventory — dynamic, mod-aware, three display modes
+// ============================================================
+renderInventory = function(){
+    if(!GS._invDisplayMode)GS._invDisplayMode="alpha";
+    var h='<div class="cd"><h3>📦 资源库存</h3>';
+    // Mode switcher
+    var modes=[{id:"alpha",n:"字典序"},{id:"category",n:"按种类"},{id:"mod",n:"按模组"}];
+    h+='<div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap">';
+    for(var mi=0;mi<modes.length;mi++){
+        var isActive=GS._invDisplayMode===modes[mi].id;
+        h+='<button class="bt sm'+(isActive?' gn':'')+'" onclick="GS._invDisplayMode=\x27'+modes[mi].id+'\x27;renderInventory();" style="font-size:.7em">'+modes[mi].n+'</button>';
+    }
+    h+='</div>';
+    h+='<div class="cg">';
+    // Build dynamic catalog
+    var cat={};
+    cat.seeds={n:"种子",i:"🌱",v:4,cat:"种子",mod:null};
+    // Helper: get modId
+    function getModId(k){
+        var reg=DataRegistry.get("crop",k);if(reg&&reg.__modId)return reg.__modId;
+        reg=DataRegistry.get("hybrid",k);if(reg&&reg.__modId)return reg.__modId;
+        reg=DataRegistry.get("animal",k);if(reg&&reg.__modId)return reg.__modId;
+        reg=DataRegistry.get("processor",k);if(reg&&reg.__modId)return reg.__modId;
+        reg=DataRegistry.get("upgrade",k);if(reg&&reg.__modId)return reg.__modId;
+        reg=DataRegistry.get("achievement",k);if(reg&&reg.__modId)return reg.__modId;
+        return null;
+    }
+    // Crops (base + hybrid)
+    for(var ck in CROP_DEFS){
+        var cd=CROP_DEFS[ck];
+        var ccat=cd.isHybrid?"杂交作物":"作物";
+        cat[ck]={n:cd.n,i:cd.i||"📦",v:cd.v,cat:ccat,mod:getModId(ck)};
+    }
+    // Animal products
+    for(var ak in ANIMAL_DEFS){
+        var ad=ANIMAL_DEFS[ak];
+        if(ad.p)cat[ad.p.k]={n:ad.p.n,i:ad.p.i||"📦",v:ad.p.v,cat:"动物产物",mod:getModId(ad.p.k)};
+    }
+    // Processor outputs
+    for(var pk in PROC_DEFS){
+        var pd=PROC_DEFS[pk];
+        if(pd.out)cat[pd.out.k]={n:pd.out.n,i:pd.out.i||"📦",v:pd.out.v,cat:"加工品",mod:getModId(pd.out.k)};
+    }
+    // Extra items from inventory not in catalog (mod items)
+    for(var ek in GS.inventory){
+        if(!cat[ek]&&GS.inventory[ek]>0)cat[ek]={n:ek,i:"📦",v:10,cat:"其他",mod:getModId(ek)||"未知模组"};
+    }
+    // Build sorted list based on mode
+    var items=[];
+    for(var ck2 in cat){items.push({k:ck2,n:cat[ck2].n,i:cat[ck2].i,v:cat[ck2].v,cat:cat[ck2].cat,mod:cat[ck2].mod});}
+    if(GS._invDisplayMode==="alpha"){
+        items.sort(function(a,b){return a.n.localeCompare(b.n,"zh");});
+    }else if(GS._invDisplayMode==="category"){
+        var catOrder={种子:0,作物:1,杂交作物:2,动物产物:3,加工品:4,其他:5};
+        items.sort(function(a,b){
+            var ca=catOrder[a.cat]!==undefined?catOrder[a.cat]:9;
+            var cb=catOrder[b.cat]!==undefined?catOrder[b.cat]:9;
+            if(ca!==cb)return ca-cb;
+            return a.n.localeCompare(b.n,"zh");
+        });
+    }else if(GS._invDisplayMode==="mod"){
+        items.sort(function(a,b){
+            var ma=a.mod||"原版";var mb=b.mod||"原版";
+            if(ma!==mb)return ma.localeCompare(mb,"zh");
+            return a.n.localeCompare(b.n,"zh");
+        });
+    }
+    var hasAny=false;var lastCat=null;var lastMod=null;
+    for(var ii=0;ii<items.length;ii++){
+        var it=items[ii];var qty=GS.inventory[it.k]||0;
+        if(qty>0)hasAny=true;
+        // Category/mod headers
+        if(GS._invDisplayMode==="category"&&it.cat!==lastCat){
+            h+='<div style="grid-column:1/-1;padding:6px 0 2px;color:#ffcc80;font-weight:bold;font-size:.85em">'+it.cat+'</div>';
+            lastCat=it.cat;
+        }
+        if(GS._invDisplayMode==="mod"&&it.mod!==lastMod){
+            var modLabel=it.mod||"原版";
+            if(it.mod&&window.__modManifest){
+                for(var mi2=0;mi2<window.__modManifest.length;mi2++){
+                    if(window.__modManifest[mi2].id===it.mod){modLabel=window.__modManifest[mi2].name;break;}
+                }
+            }
+            h+='<div style="grid-column:1/-1;padding:6px 0 2px;color:#90caf9;font-weight:bold;font-size:.85em">'+modLabel+'</div>';
+            lastMod=it.mod;
+        }
+        var sv=Math.floor(it.v*(1+GS.prestigePoints*0.1)*(GS.gemUpgrades&&GS.gemUpgrades.goldenLegend?1.2:1));
+        h+='<div class="sl'+(qty>0?'':' lk')+'" style="min-height:115px"><div style="font-size:2.2em">'+it.i+'</div><div style="font-weight:bold">'+it.n+'</div><div class="tt">库存:'+qty+' | 单价:'+sv+'💰</div>';
+        if(qty>0&&it.k!=="seeds"){
+            h+='<div style="margin-top:5px">';
+            h+='<button class="bt sm gn" onclick="window._sellK=\x27'+it.k+'\x27;window._sellQ=1;sellItem(window._sellK,window._sellQ)" style="font-size:.65em;padding:3px 8px">售1</button> ';
+            if(qty>=10)h+='<button class="bt sm gn" onclick="window._sellK=\x27'+it.k+'\x27;window._sellQ=10;sellItem(window._sellK,window._sellQ)" style="font-size:.65em;padding:3px 8px">售10</button> ';
+            h+='<button class="bt sm rd" onclick="window._sellK=\x27'+it.k+'\x27;window._sellQ='+qty+';sellItem(window._sellK,window._sellQ)" style="font-size:.65em;padding:3px 8px">售全部</button>';
+            h+='</div>';
+        }
+        h+='</div>';
+    }
+    if(!hasAny)h+='<div style="text-align:center;padding:20px;color:#999">📭 暂无库存，收获作物或动物产品后将显示在这里。</div>';
+    h+='</div></div>';
+    var pinv=document.getElementById("pinv");if(pinv)pinv.innerHTML=h;
+};
 
 // ============================================================
 // Tab switching — add research tab to panelMap
