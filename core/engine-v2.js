@@ -626,7 +626,7 @@ function doResearch(researchId){
     if(rd.cost){
         for(var rk in rd.cost){
             if(!GS.inventory[rk]||GS.inventory[rk]<rd.cost[rk]){
-                notify("资源不足：需要"+rd.cost[rk]+"个"+rk);
+                var rn2=rk;if(CROP_DEFS[rk]&&CROP_DEFS[rk].n)rn2=CROP_DEFS[rk].n;else if(rk==="seeds")rn2="种子";else if(rk==="egg")rn2="鸡蛋";else if(rk==="milk")rn2="牛奶";else if(rk==="wool")rn2="羊毛";else if(rk==="flour")rn2="面粉";else if(rk==="bread")rn2="面包";notify("资源不足：需要"+rd.cost[rk]+"个"+rn2);
                 return;
             }
         }
@@ -680,6 +680,7 @@ function renderResearch(){
                 if(GS.research.completed.indexOf(rd.requires[j])===-1){canDo=false;break;}
             }
         }
+        if(!canDo&&!done)continue;
         var costStr='';
         if(rd.cost){
             var parts=[];
