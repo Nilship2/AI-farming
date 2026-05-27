@@ -18,6 +18,21 @@ rebuildBridge();
 // ============================================================
 // Helper functions
 // ============================================================
+function formatTime(sec){
+    if(sec<60)return Math.floor(sec)+"s";
+    var s=Math.floor(sec);
+    var y=Math.floor(s/31536000);s%=31536000;
+    var d=Math.floor(s/86400);s%=86400;
+    var h=Math.floor(s/3600);s%=3600;
+    var m=Math.floor(s/60);s%=60;
+    var parts=[];
+    if(y>0)parts.push(y+"年");
+    if(d>0)parts.push(d+"天");
+    if(h>0)parts.push(h+"时");
+    if(m>0)parts.push(m+"分");
+    if(s>0||parts.length===0)parts.push(s+"秒");
+    return parts.join("");
+}
 function getCropSoilMult(cd, soilId){
     if(!cd.specialSoils||cd.specialSoils.length===0)return 1.0;
     for(var i=0;i<cd.specialSoils.length;i++){if(cd.specialSoils[i].soil===soilId)return cd.specialSoils[i].mult;}
@@ -290,7 +305,7 @@ showPlants = function(regionId, slotId){
         if(soilMult>1)notes+=' 🔺土壤x'+soilMult.toFixed(1);
         if(seasonMult>1)notes+=' 🔺季节x'+seasonMult.toFixed(1);
         if(seasonMult<1)notes+=' 🔻季节x'+seasonMult.toFixed(1);
-        h+='<div class="sl" data-action="doPlant" data-rid="'+regionId+'" data-sid="'+slotId+'" data-cid="'+cid+'"><div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div><div class="tt">生长:'+cd.g+'s | 产出:'+hc+'个</div><div class="tt">种子:'+sc+notes+'</div></div>';
+        h+='<div class="sl" data-action="doPlant" data-rid="'+regionId+'" data-sid="'+slotId+'" data-cid="'+cid+'"><div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div><div class="tt">生长:'+formatTime(cd.g)+' | 产出:'+hc+'个</div><div class="tt">种子:'+sc+notes+'</div></div>';
     }
     h+='<button class="bt sm rd" data-action="cancelPlant" style="margin-top:8px">✖ 取消</button></div></div>';
     var pf2=document.getElementById("pf");if(pf2)pf2.innerHTML=h;
@@ -456,7 +471,7 @@ renderFarm = function(){
                 h+='>';
                 h+='<div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div>';
                 h+='<div class="pb"><div class="pf" style="width:'+(p*100)+'%"></div></div>';
-                h+='<div class="tt">'+(rd2?'✔ 可收获！':Math.floor(cd.g-s.crop.timer)+'s')+'</div>';
+                h+='<div class="tt">'+(rd2?'✔ 可收获！':formatTime(cd.g-s.crop.timer))+'</div>';
                 h+='<div class="tt">土壤:'+soilName(s.soil)+' | 产出:'+hc+'个</div>';
                 if(!rd2){h+='<button class="bt sm bl" data-action="water" data-rid="'+regionId+'" data-sid="'+li+'" style="margin-top:3px;font-size:.65em">💧 浇水(+15s)</button>';}
                 h+='<button class="bt sm rd" data-action="shovel" data-rid="'+regionId+'" data-sid="'+li+'" style="margin-top:2px;font-size:.65em">🔧 铲除</button>';var grUpgNames=[];for(var guk in UPG_DEFS){if(GS.upgrades[guk]&&UPG_DEFS[guk].ef==="grow")grUpgNames.push(UPG_DEFS[guk].n+"+"+UPG_DEFS[guk].v.toFixed(1));}var grRelicNames=[];if(GS.relics)for(var grri=0;grri<GS.relics.length;grri++){var grrd=RELIC_DEFS[GS.relics[grri]];if(grrd&&grrd.ef==="grow")grRelicNames.push(grrd.n+"+"+grrd.v.toFixed(2));}var grGemNames=[];if(GS.gemUpgrades)for(var grgi in GEM_UPG_DEFS){var grgd=GEM_UPG_DEFS[grgi];if(grgd.ef==="grow"){if(grgd.repeatable){var grtv=(GS._refineCount||0)*grgd.v;if(grtv>0)grGemNames.push(grgd.n+" x"+(GS._refineCount||0)+" +"+grtv.toFixed(2));}else if(GS.gemUpgrades[grgi])grGemNames.push(grgd.n+"+"+grgd.v.toFixed(2));}}h+='<div class="tt growRate" data-gr-info="'+grInfo+'" data-gr-upg="'+(grUpgNames.length>0?grUpgNames.join(","):"")+'" data-gr-relic="'+(grRelicNames.length>0?grRelicNames.join(","):"")+'" data-gr-gem="'+(grGemNames.length>0?grGemNames.join(","):"")+'" style="color:#4fc3f7;margin-top:2px;font-size:.7em;cursor:help">⚡ x'+grTotal.toFixed(2)+'</div></div>';
@@ -570,6 +585,28 @@ renderFarm = function(){
 })();
 
 // ============================================================
+// Override renderPrestige — sort gems (unowned top, owned bottom)
+// ============================================================
+(function(){
+    var _renderPrestige = renderPrestige;
+    renderPrestige = function(){
+        _renderPrestige();
+        // Sort gem cards: unowned first
+        var ppr=document.getElementById("ppr");
+        if(!ppr)return;
+        var cg=ppr.querySelector(".cg");
+        if(!cg)return;
+        var cards=Array.prototype.slice.call(cg.children);
+        cards.sort(function(a,b){
+            var oa=a.classList.contains("lk")?1:0;
+            var ob=b.classList.contains("lk")?1:0;
+            return oa-ob;
+        });
+        cards.forEach(function(c){cg.appendChild(c);});
+    };
+})();
+
+// ============================================================
 // Research functions
 // ============================================================
 function doResearch(researchId){
@@ -613,6 +650,8 @@ function doResearch(researchId){
             }else if(u.type==="region"){
                 if(GS.regions[u.id])GS.regions[u.id].unlocked=true;
                 notify("解锁地域："+u.id);
+            }else if(u.type==="story"){
+                checkStory(u.id);
             }
         }
     }
@@ -624,8 +663,14 @@ function renderResearch(){
     if(!GS.research)GS.research={completed:[]};
     var rids=DataRegistry.ids("research");
     var h='<div class="cd"><h3>🔬 研究项目</h3><div class="tt">研究不随转生重置</div><div class="cg">';
-    for(var i=0;i<rids.length;i++){
-        var rid=rids[i];
+    // Sort: uncompleted first, completed last
+    var sortedRids=rids.slice().sort(function(a,b){
+        var da=GS.research.completed.indexOf(a)!==-1?1:0;
+        var db=GS.research.completed.indexOf(b)!==-1?1:0;
+        return da-db;
+    });
+    for(var i=0;i<sortedRids.length;i++){
+        var rid=sortedRids[i];
         var rd=DataRegistry.get("research",rid);
         if(!rd)continue;
         var done=GS.research.completed.indexOf(rid)!==-1;
@@ -654,6 +699,93 @@ function renderResearch(){
 }
 
 // ============================================================
+// Story group definitions
+// ============================================================
+var STORY_GROUPS = [
+    {id:"oldfarmer", n:"老农日记", i:"📜", match:function(k){return k.indexOf("老农日记")===0||k.indexOf("老农的遗")===0||(STORIES[k]&&STORIES[k].t&&STORIES[k].t.indexOf("老农")===0);}},
+    {id:"newcomer",  n:"后来者日记", i:"📘", match:function(k){return k.indexOf("后来者")===0||(STORIES[k]&&STORIES[k].t&&STORIES[k].t.indexOf("后来者")===0);}}
+];
+function getStoryGroup(k){
+    for(var gi=0;gi<STORY_GROUPS.length;gi++){
+        if(STORY_GROUPS[gi].match(k))return STORY_GROUPS[gi].id;
+    }
+    // Default to oldfarmer group
+    return "oldfarmer";
+}
+
+// ============================================================
+// Override renderJournal — sort + group + collapse
+// ============================================================
+renderJournal = function(){
+    var h='<div class="cd"><h3>📜 日志</h3>';
+    if(GS.storyFragments.length===0){
+        h+='<div class="tt">还没有发现任何故事碎片。继续探索农场吧。</div>';
+    }else{
+        // Group stories
+        var groups={};
+        for(var i=0;i<GS.storyFragments.length;i++){
+            var k=GS.storyFragments[i];
+            var f=STORIES[k];
+            if(!f)continue;
+            var gid=getStoryGroup(k);
+            if(!groups[gid])groups[gid]={id:gid,fragments:[]};
+            groups[gid].fragments.push({k:k,f:f});
+        }
+        // Sort fragments within each group by number
+        function extractNum(title){
+            var m=title.match(/其([一二三四五六七八九十百千万]+)/);
+            if(!m)return 99;
+            var cn="一二三四五六七八九十百千万";
+            var cv=[1,2,3,4,5,6,7,8,9,10,100,1000,10000];
+            var idx=cn.indexOf(m[1]);
+            return idx>=0?cv[idx]:99;
+        }
+        for(var gid in groups){
+            groups[gid].fragments.sort(function(a,b){
+                return extractNum(a.f.t)-extractNum(b.f.t);
+            });
+        }
+        // Render groups
+        for(var gi=0;gi<STORY_GROUPS.length;gi++){
+            var sg=STORY_GROUPS[gi];
+            var gdata=groups[sg.id];
+            if(!gdata||gdata.fragments.length===0)continue;
+            h+='<div class="cd"><h3 style="cursor:pointer" data-action="toggleGroup">'+sg.i+' '+sg.n+' ('+gdata.fragments.length+')</h3>';
+            h+='<div class="sg-body" style="display:none">';
+            for(var fi=0;fi<gdata.fragments.length;fi++){
+                var frag=gdata.fragments[fi];
+                h+='<div class="sf"><strong>'+frag.f.t+'</strong><p>'+frag.f.x+'</p></div>';
+            }
+            h+='</div></div>';
+        }
+    }
+    h+='</div>';
+    var pj=document.getElementById("pj");if(pj)pj.innerHTML=h;
+};
+
+// ============================================================
+// Override renderBestiary — use formatTime
+// ============================================================
+(function(){
+    var _renderBestiary = renderBestiary;
+    renderBestiary = function(){
+        _renderBestiary();
+        // Post-process to replace "Xs" with formatTime
+        var pb=document.getElementById("pb");
+        if(!pb)return;
+        var tts=pb.querySelectorAll(".tt");
+        for(var i=0;i<tts.length;i++){
+            var tt=tts[i];
+            var m=tt.textContent.match(/生长:(\d+)s/);
+            if(m){
+                var sec=parseInt(m[1]);
+                tt.textContent=tt.textContent.replace(/生长:\d+s/,"生长:"+formatTime(sec));
+            }
+        }
+    };
+})();
+
+// ============================================================
 // Override renderAll — include research
 // ============================================================
 renderAll = function(){
@@ -670,7 +802,12 @@ renderAll = function(){
     var _renderUpgrades = renderUpgrades;
     renderUpgrades = function(){
         var h='<div class="cd"><h3>⬆ 科技升级</h3><div class="cg">';
-        for(var k in UPG_DEFS){
+        var upgKeys=Object.keys(UPG_DEFS).sort(function(a,b){
+            var oa=GS.upgrades[a]?1:0;
+            var ob=GS.upgrades[b]?1:0;
+            return oa-ob;
+        });
+        for(var ki=0;ki<upgKeys.length;ki++){var k=upgKeys[ki];
             var d=UPG_DEFS[k];
             if(!d)continue;
             if(d.reqResearch){
@@ -718,6 +855,22 @@ renderAll = function(){
         var act=el.getAttribute("data-action");if(!act)return;
         var aidx=el.getAttribute("data-aidx");
         if(act==="releaseAnimal"){releaseAnimal(parseInt(aidx));}
+    });
+})();
+
+// Event delegation — journal toggle
+(function(){
+    var pj=document.getElementById("pj");
+    if(pj)pj.addEventListener("click",function(e){
+        var el=e.target;
+        while(el&&el!==pj&&el!==document.body){
+            if(el.nodeType===1&&el.getAttribute("data-action")==="toggleGroup"){
+                var body=el.parentNode.querySelector(".sg-body");
+                if(body)body.style.display=body.style.display==="none"?"":"none";
+                return;
+            }
+            el=el.parentNode;
+        }
     });
 })();
 
@@ -843,6 +996,58 @@ function forEachLandSlot(fn){
         }
     }
 }
+
+// ============================================================
+// Override genMerchant — use all inventory items
+// ============================================================
+genMerchant = function(){
+    if(GS.merchantOffers.length>6)GS.merchantOffers=[];
+    var avail=[];
+    for(var ik in GS.inventory){
+        if(ik==="seeds"||!GS.inventory[ik]||GS.inventory[ik]<=0)continue;
+        var iname=ik;
+        if(CROP_DEFS[ik]&&CROP_DEFS[ik].n)iname=CROP_DEFS[ik].n;
+        else if(ik==="flour")iname="面粉";
+        else if(ik==="bread")iname="面包";
+        else if(ik==="egg")iname="鸡蛋";
+        else if(ik==="milk")iname="牛奶";
+        else if(ik==="wool")iname="羊毛";
+        avail.push({k:ik,n:iname,q:GS.inventory[ik]});
+    }
+    if(avail.length===0&&(GS.inventory.seeds||0)>5){
+        avail.push({k:"seeds",n:"种子",q:GS.inventory.seeds||0});
+    }
+    var prestigeMul=1+GS.prestigePoints*0.1;
+    for(var i=0;i<3;i++){
+        if(avail.length===0)break;
+        var idx2=Math.floor(Math.random()*avail.length);
+        var picked=avail[idx2];
+        var baseVal=10;
+        if(CROP_DEFS[picked.k])baseVal=CROP_DEFS[picked.k].v;
+        var sellQty=Math.max(1,Math.floor(picked.q*0.3));
+        if(sellQty<1)sellQty=1;
+        var sellPrice=Math.floor(baseVal*sellQty*0.7*prestigeMul);
+        if(sellPrice<5)sellPrice=5;
+        GS.merchantOffers.push({t:"sell",k:picked.k,n:picked.n,q:sellQty,p:sellPrice});
+    }
+    var buyPool=[];
+    for(var bk in CROP_DEFS){
+        if(!GS.inventory[bk]||GS.inventory[bk]<10)buyPool.push({k:bk,n:CROP_DEFS[bk].n,v:CROP_DEFS[bk].v});
+    }
+    if(buyPool.length>0){
+        var count=1+Math.floor(Math.random()*2);
+        for(var j=0;j<count&&buyPool.length>0;j++){
+            var bi=Math.floor(Math.random()*buyPool.length);
+            var bp=buyPool[bi];
+            var bq=1+Math.floor(Math.random()*5);
+            var bp2=Math.floor(bp.v*bq*1.3*prestigeMul);
+            if(bp2<10)bp2=10;
+            GS.merchantOffers.push({t:"buy",k:bp.k,n:bp.n,q:bq,p:bp2});
+            buyPool.splice(bi,1);
+        }
+    }
+    if(GS.merchantOffers.length>0)notify("商人来了！查看贸易面板。");
+};
 
 // ============================================================
 // Override randEvent — fix GS.land references
