@@ -16,7 +16,7 @@ initGame = function() {
 var _loadGame = loadGame;
 loadGame = function() {
     var result = _loadGame();
-    if (typeof GS.scarecrowOn === "undefined") GS.scarecrowOn = true; GS.maxLand = 20 + Math.floor((GS.prestigePoints||0)/2) + (GS.extraLand||0); while (GS.land.length < GS.maxLand) { var soils = ["normal","clay","sand","dark"]; GS.land.push({id:GS.land.length, unlocked:false, soil:soils[GS.land.length % 4]}); }
+    if (typeof GS.scarecrowOn === "undefined") GS.scarecrowOn = true; GS.maxLand = 20 + Math.floor((GS.prestigePoints||0)/2) + (GS.extraLand||0); while (GS.land.length < GS.maxLand) { var soilIds2=DataRegistry.ids("soil");if(soilIds2.length===0)soilIds2=["normal"];var soils=soilIds2; GS.land.push({id:GS.land.length, unlocked:false, soil:soils[GS.land.length % 4]}); }
     return result;
 };
 

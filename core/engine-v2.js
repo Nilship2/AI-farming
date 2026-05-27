@@ -493,7 +493,7 @@ renderFarm = function(){
         dt=Math.min(dt,5);
         GS.seasonTimer+=dt;
         if(GS.seasonTimer>=GS.seasonDuration){
-            GS.seasonTimer-=GS.seasonDuration;GS.season=(GS.season+1)%4;
+            GS.seasonTimer-=GS.seasonDuration;GS.season=(GS.season+1)%SNAMES.length;
             if(GS.season===0)GS.year++;
             notify(SICONS[GS.season]);
             if(GS._seenSeasons&&GS._seenSeasons.indexOf(SNAMES[GS.season])===-1){GS._seenSeasons.push(SNAMES[GS.season]);}
