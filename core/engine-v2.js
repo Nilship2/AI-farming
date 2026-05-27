@@ -1,4 +1,4 @@
-// engine-v2.js — Region, Research, and Harvest Count enhancements
+﻿// engine-v2.js — Region, Research, and Harvest Count enhancements
 // Overrides key functions from engine.js
 
 // ============================================================
@@ -717,7 +717,7 @@ function getStoryGroup(k){
 // Override renderJournal — sort + group + collapse
 // ============================================================
 renderJournal = function(){
-    var h='<div class="cd"><h3>📜 日志</h3>';
+    var h='<div class="cd"><h3>📜 故事</h3>';
     if(GS.storyFragments.length===0){
         h+='<div class="tt">还没有发现任何故事碎片。继续探索农场吧。</div>';
     }else{
@@ -750,8 +750,9 @@ renderJournal = function(){
             var sg=STORY_GROUPS[gi];
             var gdata=groups[sg.id];
             if(!gdata||gdata.fragments.length===0)continue;
-            h+='<div class="cd"><h3 style="cursor:pointer" data-action="toggleGroup">'+sg.i+' '+sg.n+' ('+gdata.fragments.length+')</h3>';
-            h+='<div class="sg-body" style="display:none">';
+            var expanded=GS._expandedJournalGroups&&GS._expandedJournalGroups[sg.id];
+            h+='<div class="cd"><h3 style="cursor:pointer" data-action="toggleGroup" data-gid="'+sg.id+'">'+sg.i+' '+sg.n+' ('+gdata.fragments.length+')</h3>';
+            h+='<div class="sg-body" style="display:'+(expanded?'':'none')+'">';
             for(var fi=0;fi<gdata.fragments.length;fi++){
                 var frag=gdata.fragments[fi];
                 h+='<div class="sf"><strong>'+frag.f.t+'</strong><p>'+frag.f.x+'</p></div>';
@@ -865,8 +866,13 @@ renderAll = function(){
         var el=e.target;
         while(el&&el!==pj&&el!==document.body){
             if(el.nodeType===1&&el.getAttribute("data-action")==="toggleGroup"){
-                var body=el.parentNode.querySelector(".sg-body");
-                if(body)body.style.display=body.style.display==="none"?"":"none";
+                var gid=el.getAttribute("data-gid");
+                if(gid){
+                    if(!GS._expandedJournalGroups)GS._expandedJournalGroups={};
+                    if(GS._expandedJournalGroups[gid])delete GS._expandedJournalGroups[gid];
+                    else GS._expandedJournalGroups[gid]=true;
+                    renderJournal();
+                }
                 return;
             }
             el=el.parentNode;
