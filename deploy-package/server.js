@@ -75,11 +75,18 @@ app.get("/api/mods/:id/download", (req, res) => {
   res.json({ id: mod.id, name: mod.name, version: mod.version, author: mod.author, description: mod.description, file_content: mod.file_content });
 });
 
-// 点赞
+// 点赞（IP 去重：同一 IP 对同一 Mod 只能点一次赞）
 app.post("/api/mods/:id/like", (req, res) => {
-  if (!get("SELECT id FROM mods WHERE id = ?", [req.params.id])) return res.status(404).json({ error: "Mod 不存在" });
-  run("UPDATE mods SET likes = likes + 1 WHERE id = ?", [req.params.id]); saveDB();
-  res.json({ likes: get("SELECT likes FROM mods WHERE id = ?", [req.params.id]).likes });
+  const modId = req.params.id;
+  if (!get("SELECT id FROM mods WHERE id = ?", [modId])) return res.status(404).json({ error: "Mod 不存在" });
+  const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
+  if (get("SELECT ip FROM mod_likes WHERE ip = ? AND mod_id = ?", [ip, modId])) {
+    return res.status(409).json({ error: "你已点赞过此 Mod" });
+  }
+  run("INSERT INTO mod_likes (ip, mod_id) VALUES (?, ?)", [ip, modId]);
+  run("UPDATE mods SET likes = likes + 1 WHERE id = ?", [modId]);
+  const likes = get("SELECT likes FROM mods WHERE id = ?", [modId]).likes;
+  res.json({ likes });
 });
 
 // 上传

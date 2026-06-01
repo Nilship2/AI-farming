@@ -18,6 +18,7 @@ async function initDB() {
   }
   db.run("CREATE TABLE IF NOT EXISTS mods (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT DEFAULT '', author TEXT DEFAULT '匿名', version TEXT DEFAULT '1.0', file_content TEXT NOT NULL, downloads INTEGER DEFAULT 0, likes INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now','localtime')), updated_at TEXT DEFAULT (datetime('now','localtime')))");
   db.run("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL, is_admin INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now','localtime')))");
+  db.run("CREATE TABLE IF NOT EXISTS mod_likes (ip TEXT NOT NULL, mod_id TEXT NOT NULL, created_at TEXT DEFAULT (datetime('now','localtime')), PRIMARY KEY (ip, mod_id))");
   ready = true;
   console.log("[DB] 数据库初始化完成");
   saveDB();

@@ -36,6 +36,11 @@
     if (idx !== -1) { sel.splice(idx, 1); setSelection(sel); }
   }
 
+  // 本地点赞记录（防止重复点击）
+  function getLikedMods() { try { return JSON.parse(localStorage.getItem("farm_mod_liked") || "[]"); } catch(e) { return []; } }
+  function addLikedMod(id) { var arr = getLikedMods(); if (arr.indexOf(id) === -1) { arr.push(id); localStorage.setItem("farm_mod_liked", JSON.stringify(arr)); } }
+  function isLikedLocally(id) { return getLikedMods().indexOf(id) !== -1; }
+
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
   // ======== 渲染 ========
@@ -57,7 +62,11 @@
         } else {
           h += '<button class="bt sm bl" onclick="window._mcAddSel(\'' + m.id + '\')">加入待选</button>';
         }
-        h += '<button class="bt sm" onclick="window._mcLikeMod(\'' + m.id + '\')">❤</button>';
+        if (isLikedLocally(m.id)) {
+          h += '<button class="bt sm" style="opacity:0.4;cursor:default" disabled title="已点赞过此 Mod">❤ 已点赞</button>';
+        } else {
+          h += '<button class="bt sm" onclick="window._mcLikeMod(\'' + m.id + '\')">❤</button>';
+        }
         h += '</div></div>';
       }
       c.innerHTML = h;
@@ -118,7 +127,7 @@
     }).catch(function(e) { if (typeof notify === "function") notify("❌ " + e.message); });
   };
 
-  window._mcLikeMod = function(id) { api('/mods/' + id + '/like', {method:'POST'}).then(function(d) { if (typeof notify === 'function') notify('❤ 已点赞！(' + d.likes + ')'); loadList(); }).catch(function(e) { if (typeof notify === 'function') notify('❌ ' + e.message); }); };
+  window._mcLikeMod = function(id) { api('/mods/' + id + '/like', {method:'POST'}).then(function(d) { addLikedMod(id); if (typeof notify === 'function') notify('❤ 已点赞！(' + d.likes + ')'); loadList(); }).catch(function(e) { if (e.message === '你已点赞过此 Mod') { addLikedMod(id); loadList(); if (typeof notify === 'function') notify('❤ 已点赞过'); } else { if (typeof notify === 'function') notify('❌ ' + e.message); } }); };
   window._mcRemoveSel = function(id) {
     removeFromSelection(id);
     renderSelection();
