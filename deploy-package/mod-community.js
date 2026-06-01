@@ -70,18 +70,18 @@
   function renderSelection() {
     var panel = document.getElementById("modSelectionPanel"); if (!panel) return;
     var sel = getSelection();
-    if (sel.length === 0) {
-      panel.innerHTML = '<div class="cd"><h3>📋 待选 Mod 清单</h3><div style="color:#888;text-align:center;padding:10px">暂未选择 Mod，在下方列表中点击"加入待选"</div></div>';
-      return;
-    }
     var h = '<div class="cd"><h3>📋 待选 Mod 清单 (' + sel.length + '个)</h3>';
-    for (var i = 0; i < sel.length; i++) {
-      var meta = null;
-      try { meta = JSON.parse(localStorage.getItem("farm_mod_meta_" + sel[i]) || "null"); } catch(e) {}
-      h += '<div class="mr"><div style="flex:1"><span style="color:#ffcc80">' + esc((meta && meta.name) || sel[i]) + '</span> <span class="tt">v' + esc((meta && meta.version) || "") + '</span></div>';
-      h += '<button class="bt sm rd" onclick="window._mcRemoveSel(\'' + sel[i] + '\')">移除</button></div>';
+    if (sel.length === 0) {
+      h += '<div style="color:#888;text-align:center;padding:8px">暂未选择 Mod — 可创建纯净存档</div>';
+    } else {
+      for (var i = 0; i < sel.length; i++) {
+        var meta = null;
+        try { meta = JSON.parse(localStorage.getItem("farm_mod_meta_" + sel[i]) || "null"); } catch(e) {}
+        h += '<div class="mr"><div style="flex:1"><span style="color:#ffcc80">' + esc((meta && meta.name) || sel[i]) + '</span> <span class="tt">v' + esc((meta && meta.version) || "") + '</span></div>';
+        h += '<button class="bt sm rd" onclick="window._mcRemoveSel(\'' + sel[i] + '\')">移除</button></div>';
+      }
     }
-    h += '<div style="margin-top:10px"><button class="bt gn" onclick="window._mcCreateSave()">🎮 创建新存档并应用模组</button></div>';
+    h += '<div style="margin-top:10px"><button class="bt gn" onclick="window._mcCreateSave()">🎮 创建新存档' + (sel.length > 0 ? '并应用 ' + sel.length + ' 个模组' : '（纯净）') + '</button></div>';
     h += '</div>';
     panel.innerHTML = h;
   }
