@@ -57,7 +57,7 @@
         } else {
           h += '<button class="bt sm bl" onclick="window._mcAddSel(\'' + m.id + '\')">加入待选</button>';
         }
-        h += '<button class="bt sm" onclick="api(\'/mods/' + m.id + '/like\',{method:\"POST\"}).then(function(){loadList();if(typeof notify===\"function\")notify(\"❤ 已点赞！\");})">❤</button>';
+        h += '<button class="bt sm" onclick="window._mcLikeMod(\'' + m.id + '\')">❤</button>';
         h += '</div></div>';
       }
       c.innerHTML = h;
@@ -118,6 +118,7 @@
     }).catch(function(e) { if (typeof notify === "function") notify("❌ " + e.message); });
   };
 
+  window._mcLikeMod = function(id) { api('/mods/' + id + '/like', {method:'POST'}).then(function(d) { if (typeof notify === 'function') notify('❤ 已点赞！(' + d.likes + ')'); loadList(); }).catch(function(e) { if (typeof notify === 'function') notify('❌ ' + e.message); }); };
   window._mcRemoveSel = function(id) {
     removeFromSelection(id);
     renderSelection();
