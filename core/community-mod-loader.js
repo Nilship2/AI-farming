@@ -18,15 +18,17 @@
     }
   } catch(e) {}
 
-  // 3. 如果存档没有 _mods，检查是否有待创建的新存档 Mod
+  // 3. 如果存档没有 _mods，检查是否有待创建的新存档 Mod（双重来源）
   if (modIds.length === 0) {
     try {
       var pendingRaw = localStorage.getItem("farm_new_save_mods");
+      if (!pendingRaw) pendingRaw = sessionStorage.getItem("farm_new_save_mods_backup");
       if (pendingRaw) {
         modIds = JSON.parse(pendingRaw);
-        localStorage.removeItem("farm_new_save_mods"); // 消费掉
+        localStorage.removeItem("farm_new_save_mods");
+        try { sessionStorage.removeItem("farm_new_save_mods_backup"); } catch(e) {}
       }
-    } catch(e) {}
+    } catch(e) { console.warn("[CommunityMod] 读取待创建 Mod 失败:", e); }
   }
   if (modIds.length === 0) {
     window.__enabledMods = [];

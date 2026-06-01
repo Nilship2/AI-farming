@@ -127,34 +127,32 @@
 
   window._mcCreateSave = function() {
     var sel = getSelection();
-    if (sel.length === 0) { alert("请先在列表中选择 Mod"); return; }
+    if (sel.length === 0 && !confirm("待选清单为空，将创建不含 Mod 的纯净存档。继续？")) return;
 
-    // 找空槽位
-    var available = [];
+    // 构建槽位选择对话框
+    var msg = "选择存档位（输入编号 0-4）：\n\n";
     for (var i = 0; i < 5; i++) {
       var info = window.getSaveSlotInfo ? window.getSaveSlotInfo(i) : null;
-      if (!info) available.push(i);
-    }
-
-    if (available.length === 0) {
-      if (!confirm("所有存档位已满！是否覆盖槽位 0？")) return;
-      available = [0];
-    }
-
-    if (available.length === 1) {
-      doCreateSave(available[0], sel);
-    } else {
-      // 选槽位
-      var msg = "选择存档位：\n";
-      for (var j = 0; j < available.length; j++) {
-        msg += "  " + available[j] + ": 空\n";
+      var isCurrent = (window.__saveSlot || 0) === i;
+      if (info) {
+        msg += "  [" + i + "] " + (isCurrent ? "◀ 当前" : "  ") + " 💰" + info.coins + " 第" + info.year + "年 Mod:" + info.modCount + "个\n";
+      } else {
+        msg += "  [" + i + "] " + (isCurrent ? "◀ 当前" : "  ") + " (空)\n";
       }
-      msg += "\n输入槽位编号（0-4）：";
-      var slot = parseInt(prompt(msg, String(available[0])));
-      if (isNaN(slot) || slot < 0 || slot > 4) return;
-      if (available.indexOf(slot) === -1) { alert("该槽位已被占用，请重新选择"); return; }
-      doCreateSave(slot, sel);
     }
+    msg += "\n" + (sel.length > 0 ? "将应用 " + sel.length + " 个 Mod" : "纯净存档（无 Mod）") + "\n覆盖已有存档将被永久删除！";
+
+    // 用 prompt 选槽位
+    var slotStr = prompt(msg, "0");
+    if (slotStr === null) return;
+    var slot = parseInt(slotStr);
+    if (isNaN(slot) || slot < 0 || slot > 4) { alert("请输入 0-4 之间的数字"); return; }
+
+    // 如果槽位有存档，确认覆盖
+    var existing = window.getSaveSlotInfo ? window.getSaveSlotInfo(slot) : null;
+    if (existing && !confirm("槽位 " + slot + " 已有存档（💰" + existing.coins + "），确定覆盖？")) return;
+
+    doCreateSave(slot, sel);
   };
 
   function doCreateSave(slot, modIds) {

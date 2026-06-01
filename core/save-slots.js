@@ -1,16 +1,13 @@
 ﻿// ============================================================
-// 存档槽位系统 — 5 个存档位，各自绑定 Mod 清单
-// 在 engine-v2.js 之后加载
+// 存档槽位系统 v2 — 5 个存档位，各自绑定 Mod 清单
 // ============================================================
 (function() {
-    // 读取当前槽位
     window.__saveSlot = 0;
     try {
         var s = parseInt(localStorage.getItem("farm_current_slot") || "0");
         if (!isNaN(s) && s >= 0 && s <= 4) window.__saveSlot = s;
     } catch(e) {}
 
-    // 等 saveGame/loadGame 就绪后包装
     var _ready = false;
     function init() {
         if (_ready) return;
@@ -23,11 +20,8 @@
         // === 包装 saveGame ===
         var _saveGame = saveGame;
         saveGame = function() {
-            // 写入 _mods
             GS._mods = (window.__enabledMods || []).slice();
-            // 调用原版
             _saveGame();
-            // 额外保存到槽位 key
             try {
                 localStorage.setItem("farm_save_slot_" + window.__saveSlot, JSON.stringify(GS));
             } catch(e) {}
@@ -40,11 +34,15 @@
             var backup = null;
             try { backup = localStorage.getItem("farm_save"); } catch(e) {}
 
-            // 把槽位存档复制到 farm_save（原版 loadGame 读这个 key）
             var slotSave = null;
             try { slotSave = localStorage.getItem(slotKey); } catch(e) {}
+
             if (slotSave) {
+                // 有槽位存档 → 复制到 farm_save 供原版读取
                 try { localStorage.setItem("farm_save", slotSave); } catch(e) {}
+            } else {
+                // 空槽位 → 清掉 farm_save，避免继承旧档
+                try { localStorage.removeItem("farm_save"); } catch(e) {}
             }
 
             var result = _loadGame();
@@ -58,14 +56,27 @@
             return result;
         };
 
+        // === 新存档后立刻保存（修复#5） ===
+        var _initGame = initGame;
+        initGame = function() {
+            _initGame();
+            GS._mods = (window.__enabledMods || []).slice();
+            // 延迟保存确保 GS 完全初始化
+            setTimeout(function() {
+                try {
+                    localStorage.setItem("farm_save_slot_" + window.__saveSlot, JSON.stringify(GS));
+                } catch(e) {}
+            }, 500);
+        };
+
         console.log("[SaveSlots] 槽位 " + window.__saveSlot + " 已激活");
     }
     init();
 
-    // === 切换槽位（供外部调用） ===
+    // === 切换槽位 ===
     window.switchSaveSlot = function(newSlot) {
         if (newSlot < 0 || newSlot > 4) return;
-        if (typeof saveGame === "function") saveGame(); // 保存当前进度
+        if (typeof saveGame === "function") saveGame();
         localStorage.setItem("farm_current_slot", String(newSlot));
         location.reload();
     };
@@ -92,6 +103,8 @@
         localStorage.removeItem("farm_save_slot_" + slotIdx);
         if (window.__saveSlot === slotIdx) {
             localStorage.removeItem("farm_current_slot");
+            location.reload();
+        } else {
             location.reload();
         }
     };
