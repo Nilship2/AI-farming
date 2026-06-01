@@ -17,6 +17,9 @@ $files = @{
     "patch.js" = ""
     "community-mod-loader.js" = "core\"
     "mod-loader.js" = "core\"
+    "engine.js" = "core\"
+    "engine-v2.js" = "core\"
+    "tech-tree.js" = "core\"
     "save-slots.js" = "core\"
     "mod-community.js" = "mods\"
 }

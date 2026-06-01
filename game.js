@@ -1,3 +1,4 @@
+// [DEPRECATED] game.js is no longer used. See core/engine.js + core/engine-v2.js instead.
 ﻿"use strict";if(!Object.assign){Object.assign=function(t){for(var s,i=1;i<arguments.length;i++){s=arguments[i];for(var k in s){if(Object.prototype.hasOwnProperty.call(s,k))t[k]=s[k];}}return t;};}
 
 var GS={coins:0,gems:0,prestigePoints:0,totalCoinsEarned:0,totalCropsHarvested:0,totalAnimalsRaised:0,year:1,season:0,seasonTimer:0,seasonDuration:1800,weather:"sunny",weatherTimer:0,land:[],maxLand:6,animals:[],maxAnimals:4,upgrades:{},processors:{},inventory:{seeds:10},discoveredCrops:["wheat"],discoveredAnimals:[],discoveredHybrids:[],achievements:{},storyFragments:[],eventCooldown:0,merchantTimer:0,merchantOffers:[],scarecrowOn:true,lastSave:0,gemUpgrades:{},totalGemsEarned:0,extraLand:0};

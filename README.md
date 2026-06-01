@@ -82,9 +82,21 @@ python -m http.server 8080
 
 ```
 农场增量/
-├── index.html    # 主页面（UI 布局 + 样式）
-├── game.js       # 核心游戏逻辑（~65KB）
-└── patch.js      # UI 增强补丁（悬浮窗、主题、存档等）
+├── index.html             # 主页面（UI 布局 + 样式）
+├── patch.js               # UI 增强补丁（悬浮窗、主题等）
+├── server.js              # Mod 社区 API 服务器（Node.js + Express）
+├── db.js                  # SQLite 数据库（sql.js）
+├── core/
+│   ├── registry.js        # 数据注册中心
+│   ├── engine.js          # 核心引擎
+│   ├── engine-v2.js       # 引擎增强（区域、研究、杂交扩展）
+│   ├── mod-loader.js      # Mod 加载器
+│   ├── community-mod-loader.js  # 社区 Mod 加载器
+│   ├── save-slots.js      # 多存档槽位系统
+│   └── mod-editor.js      # Mod 编辑器
+├── data/                  # 15 个数据定义文件
+├── mods/                  # Mod 目录
+└── deploy-package/        # 生产部署包
 ```
 
 - **零构建步骤**：纯原生 JavaScript，无框架、无打包、无外部依赖
