@@ -70,6 +70,12 @@
         };
 
         console.log("[SaveSlots] 槽位 " + window.__saveSlot + " 已激活");
+        // ★ 包装完成，启动游戏
+        if (typeof rebuildBridge === "function") rebuildBridge();
+        if (typeof startGame === "function") {
+            window.__modSelectionPending = false;
+            startGame();
+        }
     }
     init();
 
