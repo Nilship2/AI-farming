@@ -91,7 +91,72 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 .me-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .me-row>*{flex:1;min-width:80px}
 .me-actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
-</style>
+
+/* ========== 移动端优化 ========== */
+@media (max-width:768px){
+    body{font-size:14px}
+    #app{padding:6px}
+    #header{padding:8px 0}
+    #header h1{font-size:1.4em}
+    #header .sub{font-size:.8em}
+    #header .weather{font-size:.75em}
+
+    /* 资源栏: 2行3列紧凑 */
+    #rbar{gap:6px;padding:8px 6px;display:grid;grid-template-columns:repeat(3,1fr)}
+    #rbar .r{min-width:auto}
+    #rbar .r .ic{font-size:1.1em}
+    #rbar .r .v{font-size:1em}
+    #rbar .r .l{font-size:.65em}
+
+    /* 标签栏: 桌面端保持, 移动端隐藏(底部导航替代) */
+    #tabs{display:none}
+
+    /* 面板加底部留白给导航 */
+    .pn.ac{padding-bottom:72px}
+
+    /* 卡片: 双列 */
+    .cg{grid-template-columns:repeat(2,1fr)!important;gap:5px}
+    .sl{min-height:72px;padding:7px 5px;gap:3px;font-size:.9em}
+    .sl .pb{height:5px}
+    .sl .tt{font-size:.68em}
+
+    /* 按钮触控 */
+    .bt{padding:8px 14px;font-size:.82em;min-height:40px;min-width:40px}
+    .bt.sm{padding:5px 10px;font-size:.72em;min-height:34px}
+
+    /* 通知区: 顶部居中 */
+    #nf{top:4px;left:5%;right:5%;max-width:90%;flex-direction:column;align-items:center}
+    #nf .nt{font-size:.75em;padding:6px 10px;border-radius:7px}
+
+    /* 内容卡片收紧 */
+    .cd{padding:8px;margin:4px 0;border-radius:9px}
+    .cd h3{font-size:.9em;margin-bottom:5px}
+
+    /* MR行适配 */
+    .mr{flex-wrap:wrap;padding:5px;gap:4px}
+
+    /* 进度条 */
+    .pb{height:5px}
+    
+    /* 页脚 */
+    .sb{font-size:.65em;padding:4px;padding-bottom:70px}
+
+    /* 弹窗 */
+    #detailOverlay>div{max-width:95%!important;padding:16px!important}
+    
+
+    /* 底部导航 */
+    #mobileNav{display:flex!important}
+    .mnav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:#888;font-size:.65em;cursor:pointer;padding:4px 6px;border-radius:6px;min-width:48px;font-family:inherit;flex:1;max-width:72px}
+    .mnav-btn span{font-size:.7em;line-height:1}
+    .mnav-btn.active{color:#ffd700;background:rgba(255,215,0,.1)}
+    .mnav-btn:active{background:rgba(255,215,0,.2)}
+    #mobileMoreMenu .mnav-btn{flex:0 0 auto;min-width:60px;max-width:none;font-size:.7em;padding:6px 8px}
+
+    /* 亮色主题覆盖 */
+    body.light #rbar{gap:4px}
+    body.light .sl{min-height:70px}
+}</style>
 </head>
 <body>
 
@@ -175,6 +240,107 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 </div>
 </div>
 
+
+<div id="mobileNav" style="display:none;position:fixed;bottom:0;left:0;right:0;height:56px;background:rgba(26,10,0,.94);border-top:1px solid rgba(255,215,0,.2);z-index:998;display:none;justify-content:space-around;align-items:center;padding:0 4px">
+<button class="mnav-btn active" data-pn="farm">🏠<span>农田</span></button>
+<button class="mnav-btn" data-pn="animals">🐄<span>畜棚</span></button>
+<button class="mnav-btn" data-pn="inventory">📦<span>库存</span></button>
+<button class="mnav-btn" data-pn="upgrades">⬆<span>升级</span></button>
+<button class="mnav-btn" id="mnavMore" data-pn="more">⋯<span>更多</span></button>
+</div>
+<div id="mobileMoreMenu" style="display:none;position:fixed;bottom:56px;left:0;right:0;background:rgba(26,10,0,.97);border-top:1px solid rgba(255,215,0,.2);z-index:997;padding:8px;max-height:50vh;overflow-y:auto;flex-wrap:wrap;gap:4px">
+</div><script>
+// ========== 移动端底部导航 ==========
+(function(){
+    function isMobile(){return window.innerWidth<=768;}
+    
+    function buildMoreMenu(){
+        var menu=document.getElementById("mobileMoreMenu");
+        if(!menu)return;
+        var allTabs=["farm","animals","process","upgrades","trade","bestiary","achievements","journal","prestige","relics","tutorial","research","inventory","system","modedit","techtree","modcom"];
+        var mainNav=["farm","animals","inventory","upgrades"];
+        var html='';
+        for(var i=0;i<allTabs.length;i++){
+            var pn=allTabs[i];
+            if(mainNav.indexOf(pn)!==-1)continue;
+            var dt=document.querySelector('#tabs [data-pn="'+pn+'"]');
+            if(!dt||dt.style.display==="none")continue;
+            html+='<button class="mnav-btn" data-pn="'+pn+'">'+dt.textContent.trim()+'</button>';
+        }
+        menu.innerHTML=html;
+    }
+
+    function switchTab(pn){
+        var dt=document.querySelector('#tabs [data-pn="'+pn+'"]');
+        if(dt)dt.click();
+        // Update active highlight
+        var allBtns=document.querySelectorAll(".mnav-btn");
+        for(var i=0;i<allBtns.length;i++)allBtns[i].classList.remove("active");
+        var active=document.querySelector('.mnav-btn[data-pn="'+pn+'"]');
+        if(active)active.classList.add("active");
+        document.getElementById("mobileMoreMenu").style.display="none";
+        window.scrollTo(0,0);
+    }
+
+    function init(){
+        if(!isMobile())return;
+        var nav=document.getElementById("mobileNav");
+        if(!nav)return;
+        nav.style.display="flex";
+        buildMoreMenu();
+
+        // Main nav buttons
+        var btns=nav.querySelectorAll(".mnav-btn");
+        for(var i=0;i<btns.length;i++){
+            btns[i].addEventListener("click",function(){
+                var pn=this.getAttribute("data-pn");
+                if(pn==="more"){
+                    var menu=document.getElementById("mobileMoreMenu");
+                    var show=menu.style.display!=="flex";
+                    menu.style.display=show?"flex":"none";
+                    this.classList.toggle("active",show);
+                }else{
+                    switchTab(pn);
+                }
+            });
+        }
+
+        // More menu buttons
+        document.getElementById("mobileMoreMenu").addEventListener("click",function(e){
+            var btn=e.target.closest(".mnav-btn");
+            if(!btn)return;
+            var pn=btn.getAttribute("data-pn");
+            if(pn)switchTab(pn);
+        });
+
+        // Listen for tab changes to update active state
+        var tabs=document.getElementById("tabs");
+        if(tabs){
+            tabs.addEventListener("click",function(){
+                setTimeout(function(){
+                    var at=tabs.querySelector(".tb.ac");
+                    if(!at)return;
+                    var pn=at.getAttribute("data-pn");
+                    var allBtns=document.querySelectorAll(".mnav-btn");
+                    for(var i=0;i<allBtns.length;i++){
+                        allBtns[i].classList.toggle("active",allBtns[i].getAttribute("data-pn")===pn);
+                    }
+                    document.getElementById("mobileMoreMenu").style.display="none";
+                },100);
+            });
+        }
+
+        // Sync more menu when mod community / mod edit tabs appear
+        setInterval(function(){
+            var menu=document.getElementById("mobileMoreMenu");
+            if(menu&&menu.style.display==="flex")buildMoreMenu();
+        },2000);
+    }
+
+    if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);
+    else setTimeout(init,200);
+})();
+</script>
 </body>
 </html>
 

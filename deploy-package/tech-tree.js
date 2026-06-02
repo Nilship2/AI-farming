@@ -173,10 +173,15 @@ function assignState(nodes){
             n.owned=n.repeatable?false:!!GS.gemUpgrades[n.id];n.available=!n.owned&&GS.gems>=n.c;n.locked=!n.owned&&!n.available;
             if(!n.locked){for(var j=0;j<n.parents.length;j++){if(!GS.gemUpgrades[n.parents[j]]){n.locked=true;n.available=false;break;}}}
         }else if(n.type==="research"){
-            n.owned=!!(GS.research&&GS.research.completed&&GS.research.completed.indexOf(n.id)!==-1);n.available=false;
-            if(!n.owned&&n.resCost){n.available=true;for(var rk in n.resCost){if((GS.inventory[rk]||0)<n.resCost[rk]){n.available=false;break;}}}
+            n.owned=!!(GS.research&&GS.research.completed&&GS.research.completed.indexOf(n.id)!==-1);
+            n.available=false;n._lockReason="";
+            if(!n.owned&&n.resCost){
+                n.available=true;var missing=[];
+                for(var rk in n.resCost){if((GS.inventory[rk]||0)<n.resCost[rk]){n.available=false;missing.push(rk);}}
+                if(missing.length>0)n._lockReason="资源不足:"+missing.join(",");
+            }
             n.locked=!n.owned&&!n.available;
-            if(!n.locked){for(var j=0;j<n.parents.length;j++){var rc=GS.research&&GS.research.completed;if(!rc||rc.indexOf(n.parents[j])===-1){n.locked=true;n.available=false;break;}}}
+            if(!n.locked){for(var j=0;j<n.parents.length;j++){var rc=GS.research&&GS.research.completed;if(!rc||rc.indexOf(n.parents[j])===-1){n.locked=true;n.available=false;n._lockReason="前置:"+((DataRegistry.get("research",n.parents[j])||{}).n||n.parents[j]);break;}}}
         }
     }
 }
@@ -190,7 +195,8 @@ function renderTechTree(){
     assignState(L.nodes);
 
     var sw=Math.max(1200,L.width),sh=Math.max(700,L.height);
-    var h='<div class="cd" style="overflow:auto;max-height:72vh"><h3>🌳 科技树</h3>';
+    var h='<div class="cd" style="overflow:auto;max-height:72vh"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><h3 style="margin:0">🌳 科技树</h3><div style="display:flex;gap:4px"><button class="bt sm" onclick="window._ttZoom(-0.2)" title="缩小">🔍−</button><button class="bt sm" onclick="window._ttZoom(0.2)" title="放大">🔍+</button><button class="bt sm rd" onclick="window._ttZoom(0)" title="重置">↺</button></div></div>';
+    h+='<div id="ttZoomContainer" style="transform:scale('+(window._ttZoomLevel||1)+');transform-origin:0 0;transition:transform .2s;width:'+sw+'px;height:'+sh+'px">';
     h+='<div style="position:relative;width:'+sw+'px;height:'+sh+'px;min-width:100%">';
 
     // SVG
@@ -233,22 +239,24 @@ function renderTechTree(){
         if(n.type==="gem"&&n.repeatable)extra='<div style="color:#ab47bc;font-size:.62em">∞</div>';
         else if(n.owned)extra='<div style="color:#66bb6a;font-size:.62em">✓</div>';
         else if(n.available)extra='<div style="color:#ffd700;font-size:.62em;white-space:nowrap;overflow:hidden;max-width:130px">'+cost+'</div>';
+        else if(n.locked&&n.type==="research"&&n._lockReason&&n._lockReason.indexOf("资源不足")===0)extra='<div style="color:#ff9800;font-size:.6em;white-space:nowrap;overflow:hidden;max-width:130px">'+cost+'</div>';
         else extra='<div style="color:#555;font-size:.62em">🔒</div>';
         h+='<div class="tt-node" id="ttn-'+n.id+'" data-node-id="'+n.id+'"'
             +' onclick="window._ttNav(\''+n.id+'\',\''+n.type+'\')"'
             +' style="position:absolute;left:'+left+'px;top:'+top+'px;width:'+CARD_W+'px;height:'+CARD_H+'px;'
             +'border:2px solid '+bc+';border-radius:8px;background:'+bg+';opacity:'+op+';'+cur
             +'z-index:1;text-align:center;padding:3px 2px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1px;font-size:.66em;transition:box-shadow .15s,transform .15s;overflow:hidden"'
-            +' title="'+n.d+(n.locked&&!n.available?'\n\u524d\u7f6e\u672a\u6ee1\u8db3':'')+'"'
+            +' title="'+n.d+(n._lockReason?'\n'+n._lockReason:n.locked?'\n\u524d\u7f6e\u672a\u6ee1\u8db3':'')+'"'
             +'>';
         h+='<div style="font-size:1.3em;line-height:1">'+n.i+'</div>';
         h+='<div style="font-weight:bold;color:#ffcc80;line-height:1.1">'+n.n+'</div>';
         h+=extra+'</div>';
     }
 
-    h+='</div></div>';
+    h+='</div></div></div>';  // close inner, zoom container, outer
     panel.innerHTML=h;
     setTimeout(attachHover,100);
+    enableDragScroll(panel.querySelector(".cd"));
 }
 
 function attachHover(){
@@ -258,13 +266,13 @@ function attachHover(){
     for(var i=0;i<edges.length;i++){
         var e=edges[i],f=e.getAttribute("data-from"),t=e.getAttribute("data-to");
         if(f){if(!conn[f])conn[f]=[];if(conn[f].indexOf(t)===-1)conn[f].push(t);}
-        if(t){if(!conn[t])conn[t]=[];if(conn[t].indexOf(f)===-1)conn[t].push(f);}
+        if(t&&f){if(!conn[t])conn[t]=[];if(conn[t].indexOf(f)===-1)conn[t].push(f);}
     }
     function hl(id){
         var r=[id];if(conn[id])r=r.concat(conn[id]);
         for(var i=0;i<edges.length;i++){
             var e=edges[i],f=e.getAttribute("data-from"),to=e.getAttribute("data-to");
-            var m=r.indexOf(f)!==-1||r.indexOf(to)!==-1;
+            var m=f?(r.indexOf(f)!==-1&&r.indexOf(to)!==-1):(r.indexOf(to)!==-1);
             e.setAttribute("stroke",m?"#ffd700":"#6b4a2a");
             e.setAttribute("stroke-width",m?"3":"2");
         }
@@ -280,6 +288,52 @@ function attachHover(){
     for(var i=0;i<nodes.length;i++){nodes[i].addEventListener("mouseenter",function(){hl(this.getAttribute("data-node-id"));});nodes[i].addEventListener("mouseleave",ul);}
 }
 
+function enableDragScroll(el){
+    if(!el)return;
+    var dragging=false,startX=0,startY=0,scrollX=0,scrollY=0;
+    el.addEventListener("mousedown",function(e){
+        // Only drag on empty space (not on node cards, buttons, titles)
+        if(e.target.closest(".tt-node")||e.target.closest(".bt")||e.target.closest("h3"))return;
+        dragging=true;
+        startX=e.clientX;startY=e.clientY;
+        scrollX=el.scrollLeft;scrollY=el.scrollTop;
+        el.style.cursor="grabbing";
+        el.style.userSelect="none";
+        e.preventDefault();
+    });
+    document.addEventListener("mousemove",function(e){
+        if(!dragging)return;
+        var dx=e.clientX-startX,dy=e.clientY-startY;
+        el.scrollLeft=scrollX-dx;el.scrollTop=scrollY-dy;
+    });
+    document.addEventListener("mouseup",function(){
+        if(dragging){dragging=false;el.style.cursor="";el.style.userSelect="";}
+    });
+    // Set grab cursor
+    el.style.cursor="grab";
+    // Touch support
+    el.addEventListener("touchstart",function(e){
+        if(e.target.closest(".tt-node")||e.target.closest(".bt")||e.target.closest("h3"))return;
+        if(e.touches.length!==1)return;
+        dragging=true;
+        startX=e.touches[0].clientX;startY=e.touches[0].clientY;
+        scrollX=el.scrollLeft;scrollY=el.scrollTop;
+    },{passive:false});
+    el.addEventListener("touchmove",function(e){
+        if(!dragging)return;
+        var dx=e.touches[0].clientX-startX,dy=e.touches[0].clientY-startY;
+        el.scrollLeft=scrollX-dx;el.scrollTop=scrollY-dy;
+    },{passive:false});
+    el.addEventListener("touchend",function(){dragging=false;});
+}
+
+window._ttZoomLevel=window._ttZoomLevel||1;
+window._ttZoom=function(delta){
+    if(delta===0){window._ttZoomLevel=1;}
+    else{window._ttZoomLevel=Math.max(.4,Math.min(2.5,window._ttZoomLevel+delta));}
+    var el=document.getElementById("ttZoomContainer");
+    if(el)el.style.transform="scale("+window._ttZoomLevel+")";
+};
 window._ttNav=function(id,type){
     var t;if(type==="upgrade")t="upgrades";else if(type==="gem")t="prestige";else if(type==="research")t="research";
     if(t){var b=document.querySelector('#tabs [data-pn="'+t+'"]');if(b)b.click();}
@@ -306,4 +360,81 @@ function init(){
     },50);});
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+// ========== 移动端手风琴模式 ==========
+function renderTechTreeMobile(){
+    var panel=document.getElementById("ptechtree");
+    if(!panel||(" "+panel.className+" ").indexOf(" ac ")===-1)return;
+
+    var data=buildTechNodes();
+    assignState(data.nodes);
+
+    var groups={upgrade:[],gem:[],research:[]};
+    for(var i=0;i<data.nodes.length;i++){
+        var n=data.nodes[i];
+        if(groups[n.type])groups[n.type].push(n);
+    }
+
+    var groupNames={upgrade:"⬆ 升级科技",gem:"💎 宝石祭坛",research:"🔬 研究项目"};
+    var ownedCount={upgrade:0,gem:0,research:0},totalCount={upgrade:0,gem:0,research:0};
+    for(var gk in groups){
+        totalCount[gk]=groups[gk].length;
+        for(var i=0;i<groups[gk].length;i++){if(groups[gk][i].owned)ownedCount[gk]++;}
+    }
+
+    var h='<div class="cd"><h3>🌳 科技树</h3>';
+    var gks=["upgrade","gem","research"];
+    for(var gi=0;gi<gks.length;gi++){
+        var gk=gks[gi],gnodes=groups[gk];
+        var depthMap={};
+        for(var i=0;i<gnodes.length;i++){
+            var d=0,cur=gnodes[i];
+            while(cur.parents&&cur.parents.length>0){
+                var found=false;
+                for(var j=0;j<gnodes.length;j++){if(gnodes[j].id===cur.parents[0]){cur=gnodes[j];d++;found=true;break;}}
+                if(!found)break;
+            }
+            depthMap[gnodes[i].id]=d;
+        }
+        gnodes.sort(function(a,b){return (depthMap[a.id]||0)-(depthMap[b.id]||0);});
+
+        h+='<div class="cd" style="margin:4px 0;cursor:pointer" onclick="var ul=this.nextElementSibling;ul.style.display=ul.style.display===\'none\'?\'\':\'none\';">';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+        h+='<strong>'+groupNames[gk]+'</strong>';
+        h+='<span style="color:#888;font-size:.8em">'+ownedCount[gk]+'/'+totalCount[gk]+'</span>';
+        h+='</div></div>';
+
+        h+='<div style="padding:4px 0 4px 12px">';
+        for(var i=0;i<gnodes.length;i++){
+            var n=gnodes[i];
+            var indent=depthMap[n.id]||0;
+            var prefix="";
+            for(var s=0;s<indent;s++)prefix+="|  ";
+            if(indent>0)prefix+="|- ";
+
+            var color="#888";
+            if(n.owned)color="#66bb6a";
+            else if(n.available)color="#ffd700";
+
+            var cost="";
+            if(!n.owned){
+                if(n.type==="upgrade")cost=" "+n.c+"💰";
+                else if(n.type==="gem")cost=" "+(n.repeatable?"每次":"")+n.c+"💎";
+                else if(n.type==="research"&&n.resCost){var p=[];for(var ck in n.resCost)p.push(n.resCost[ck]+ck);cost=" "+p.join(" ");}
+            }else{cost=" ✓";}
+
+            h+='<div onclick="event.stopPropagation();window._ttNav(\''+n.id+'\',\''+n.type+'\')"'
+                +' style="padding:5px 4px;font-size:.78em;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:6px;'
+                +(n.available?'cursor:pointer':'')+';'+(n.locked?'opacity:.4':'')+'"'
+                +'>';
+            h+='<span style="font-family:monospace;color:#555;white-space:nowrap">'+prefix+'</span>';
+            h+='<span>'+n.i+'</span><span style="color:'+color+'">'+n.n+'</span>';
+            h+='<span style="margin-left:auto;font-size:.7em;color:'+color+'">'+cost+'</span>';
+            h+='</div>';
+        }
+        h+='</div>';
+    }
+    h+='</div>';
+    panel.innerHTML=h;
+}
+
 })();
