@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -51,15 +51,43 @@ app.post("/api/auth/login", async (req, res) => { console.log("[LOGIN] body:", J
   res.json({ token, user: { id: user.id, username: user.username } });
 });
 
-// ======== Mod 列表 ========
+// ======== Mod 列表（分页 + 排序 + 搜索）========
 app.get("/api/mods", (req, res) => {
-  const search = req.query.search || "";
-  const mods = search
-    ? all("SELECT id, name, description, author, version, downloads, likes, created_at FROM mods WHERE name LIKE ? OR description LIKE ? ORDER BY downloads DESC", ["%" + search + "%", "%" + search + "%"])
-    : all("SELECT id, name, description, author, version, downloads, likes, created_at FROM mods ORDER BY downloads DESC");
-  res.json({ mods });
-});
+  const search = (req.query.search || "").trim();
+  const sort = req.query.sort || "downloads";
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const pageSize = Math.min(50, Math.max(5, parseInt(req.query.pageSize) || 10));
 
+  // 排序字段白名单
+  const sortMap = {
+    downloads: "downloads DESC",
+    likes: "likes DESC",
+    updated: "updated_at DESC"
+  };
+  const orderBy = sortMap[sort] || "downloads DESC";
+
+  // 搜索条件
+  let whereClause = "";
+  const params = [];
+  if (search) {
+    whereClause = "WHERE name LIKE ? OR description LIKE ?";
+    params.push("%" + search + "%", "%" + search + "%");
+  }
+
+  // 总数
+  const countRow = get("SELECT COUNT(*) as cnt FROM mods " + whereClause, params);
+  const total = countRow ? countRow.cnt : 0;
+  const totalPages = Math.ceil(total / pageSize);
+
+  // 分页查询
+  const offset = (page - 1) * pageSize;
+  const mods = all(
+    "SELECT id, name, description, author, version, downloads, likes, created_at, updated_at FROM mods " + whereClause + " ORDER BY " + orderBy + " LIMIT ? OFFSET ?",
+    params.concat([pageSize, offset])
+  );
+
+  res.json({ mods, total, page, pageSize, totalPages });
+});
 // Mod 详情
 app.get("/api/mods/:id", (req, res) => {
   const mod = get("SELECT id, name, description, author, version, downloads, likes, created_at, updated_at FROM mods WHERE id = ?", [req.params.id]);

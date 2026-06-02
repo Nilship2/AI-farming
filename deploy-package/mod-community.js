@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // Mod 社区 v2 — 待选清单 + 创建新存档并应用模组
 // ============================================================
 (function() {
@@ -44,31 +44,68 @@
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
 
   // ======== 渲染 ========
+  var _mcSort = "downloads";
+  var _mcPage = 1;
+  var _mcSearch = "";
+
   function loadList() {
-    api("/mods").then(function(d) {
+    var params = "?sort=" + _mcSort + "&page=" + _mcPage + "&pageSize=10";
+    if (_mcSearch) params += "&search=" + encodeURIComponent(_mcSearch);
+    api("/mods" + params).then(function(d) {
       var c = document.getElementById("modCommunityList"); if (!c) return;
       var mods = d.mods || [];
-      if (mods.length === 0) { c.innerHTML = '<div style="text-align:center;color:#888;padding:20px">社区还没有 Mod，快来上传第一个吧！</div>'; return; }
-      var sel = getSelection(); var h = "";
-      for (var i = 0; i < mods.length; i++) {
-        var m = mods[i]; var inSel = sel.indexOf(m.id) !== -1;
-        h += '<div class="mr" style="flex-wrap:wrap">';
-        h += '<div style="flex:1;min-width:150px"><div style="font-weight:bold;color:#ffcc80">' + esc(m.name) + '</div>';
-        h += '<div class="tt">' + esc(m.description || "暂无描述") + '</div>';
-        h += '<div class="tt">👤 ' + esc(m.author) + ' | v' + esc(m.version) + ' | ⬇ ' + (m.downloads||0) + ' | ❤ ' + (m.likes||0) + '</div></div>';
-        h += '<div style="display:flex;gap:4px;align-items:center">';
-        if (inSel) {
-          h += '<button class="bt sm rd" onclick="window._mcRemoveSel(\'' + m.id + '\')">移出待选</button>';
-        } else {
-          h += '<button class="bt sm bl" onclick="window._mcAddSel(\'' + m.id + '\')">加入待选</button>';
-        }
-        if (isLikedLocally(m.id)) {
-          h += '<button class="bt sm" style="opacity:0.4;cursor:default" disabled title="已点赞过此 Mod">❤ 已点赞</button>';
-        } else {
-          h += '<button class="bt sm" onclick="window._mcLikeMod(\'' + m.id + '\')">❤</button>';
-        }
-        h += '</div></div>';
+      
+      // Sort bar
+      var h = '<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">';
+      h += '<input type="text" id="mcSearchInput" value="' + esc(_mcSearch) + '" placeholder="搜索 Mod..." style="flex:1;min-width:120px;background:rgba(0,0,0,.3);border:1px solid #555;border-radius:6px;color:#f0e0c0;padding:5px 8px;font-size:.82em" onkeydown="if(event.key===\'Enter\')window._mcDoSearch()">';
+      h += '<button class="bt sm" onclick="window._mcDoSearch()">🔍</button>';
+      var sorts = [
+        {k:"downloads", n:"⬇ 下载量"},
+        {k:"likes", n:"❤ 点赞数"},
+        {k:"updated", n:"🕐 最新"}
+      ];
+      for (var si = 0; si < sorts.length; si++) {
+        var s = sorts[si];
+        h += '<button class="bt sm' + (_mcSort === s.k ? ' gn' : '') + '" onclick="window._mcSetSort(\'' + s.k + '\')">' + s.n + '</button>';
       }
+      h += '</div>';
+
+      if (mods.length === 0) {
+        h += '<div style="text-align:center;color:#888;padding:20px">' + (_mcSearch ? '没有匹配的 Mod' : '社区还没有 Mod，快来上传第一个吧！') + '</div>';
+      } else {
+        var sel = getSelection();
+        for (var i = 0; i < mods.length; i++) {
+          var m = mods[i]; var inSel = sel.indexOf(m.id) !== -1;
+          h += '<div class="mr" style="flex-wrap:wrap">';
+          h += '<div style="flex:1;min-width:150px"><div style="font-weight:bold;color:#ffcc80">' + esc(m.name) + '</div>';
+          h += '<div class="tt">' + esc(m.description || "暂无描述") + '</div>';
+          h += '<div class="tt">👤 ' + esc(m.author) + ' | v' + esc(m.version) + ' | ⬇ ' + (m.downloads||0) + ' | ❤ ' + (m.likes||0) + '</div>';
+          if(m.updated_at)h+='<div class="tt" style="font-size:.72em;color:#888">🕐 ' + m.updated_at.replace('T',' ').substring(0,16) + '</div>';
+          h += '</div>';
+          h += '<div style="display:flex;gap:4px;align-items:center">';
+          if (inSel) {
+            h += '<button class="bt sm rd" onclick="window._mcRemoveSel(\'' + m.id + '\')">移出待选</button>';
+          } else {
+            h += '<button class="bt sm bl" onclick="window._mcAddSel(\'' + m.id + '\')">加入待选</button>';
+          }
+          if (isLikedLocally(m.id)) {
+            h += '<button class="bt sm" style="opacity:0.4;cursor:default" disabled title="已点赞过此 Mod">❤ 已点赞</button>';
+          } else {
+            h += '<button class="bt sm" onclick="window._mcLikeMod(\'' + m.id + '\')">❤</button>';
+          }
+          h += '</div></div>';
+        }
+      }
+
+      // Pagination
+      if (d.totalPages > 1) {
+        h += '<div style="text-align:center;margin-top:10px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap">';
+        h += '<button class="bt sm" onclick="window._mcGoPage(' + (d.page - 1) + ')"' + (d.page <= 1 ? ' disabled style="opacity:0.3"' : '') + '>◀</button>';
+        h += '<span style="color:#aaa;font-size:.82em;padding:4px 8px">' + d.page + ' / ' + d.totalPages + '</span>';
+        h += '<button class="bt sm" onclick="window._mcGoPage(' + (d.page + 1) + ')"' + (d.page >= d.totalPages ? ' disabled style="opacity:0.3"' : '') + '>▶</button>';
+        h += '</div>';
+      }
+
       c.innerHTML = h;
     }).catch(function(e) {
       var c = document.getElementById("modCommunityList");
@@ -116,6 +153,10 @@
     renderSelection();
     loadList();
   };
+
+  window._mcSetSort = function(s) { _mcSort = s; _mcPage = 1; loadList(); };
+  window._mcDoSearch = function() { var el = document.getElementById("mcSearchInput"); _mcSearch = el ? el.value.trim() : ""; _mcPage = 1; loadList(); };
+  window._mcGoPage = function(p) { if (p < 1) return; _mcPage = p; loadList(); };
 
   // ======== 按钮动作 ========
   window._mcAddSel = function(id) {
