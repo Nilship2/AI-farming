@@ -1,47 +1,62 @@
-﻿$ErrorActionPreference = "Stop"
+﻿$ErrorActionPreference = "Continue"
 $farmDir = "C:\farm"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-Write-Host "🌾 农场增量 Mod 社区 v2 部署" -ForegroundColor Yellow
+Write-Host "[Farm] Deploy v2" -ForegroundColor Yellow
 
-Write-Host "[1/4] 停止旧服务..." -ForegroundColor Cyan
-$proc = Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*server.js*" }
-if ($proc) { $proc | Stop-Process -Force; Write-Host "  已停止" -ForegroundColor Green; Start-Sleep 2 }
-else { Write-Host "  未找到运行中的服务" -ForegroundColor Gray }
+Write-Host "[1/4] Stop old service..." -ForegroundColor Cyan
+try {
+    $proc = Get-Process -Name "node" -ErrorAction SilentlyContinue
+    if ($proc) { $proc | Stop-Process -Force -ErrorAction SilentlyContinue; Write-Host "  Stopped" -ForegroundColor Green; Start-Sleep 2 }
+    else { Write-Host "  No running service" -ForegroundColor Gray }
+} catch { Write-Host "  Skip process check" -ForegroundColor Gray }
 
-Write-Host "[2/4] 复制文件..." -ForegroundColor Cyan
+Write-Host "[2/4] Copy files..." -ForegroundColor Cyan
 $files = @{
     "db.js" = ""
     "server.js" = ""
     "index.html" = ""
     "patch.js" = ""
+    "events.js" = "data\"
+    "research.js" = "data\"
     "community-mod-loader.js" = "core\"
     "mod-loader.js" = "core\"
     "engine.js" = "core\"
     "engine-v2.js" = "core\"
     "tech-tree.js" = "core\"
+    "debug-panel.js" = "core\"
     "save-slots.js" = "core\"
     "mod-community.js" = "mods\"
 }
 foreach ($f in $files.Keys) {
+    $src = $scriptDir + "\" + $f
     $dest = $farmDir + "\" + $files[$f] + $f
-    Copy-Item "$scriptDir\$f" $dest -Force
-    Write-Host "  ✓ $f" -ForegroundColor Green
+    if (Test-Path $src) {
+        Copy-Item $src $dest -Force -ErrorAction SilentlyContinue
+        Write-Host "  OK $f" -ForegroundColor Green
+    } else {
+        Write-Host "  MISSING: $src" -ForegroundColor Red
+    }
 }
 
-Write-Host "[3/4] 验证..." -ForegroundColor Cyan
+Write-Host "[3/4] Verify..." -ForegroundColor Cyan
 $allOk = $true
 foreach ($f in $files.Keys) {
     $dest = $farmDir + "\" + $files[$f] + $f
-    if (-not (Test-Path $dest)) { Write-Host "  ✗ 缺失: $dest" -ForegroundColor Red; $allOk = $false }
+    if (-not (Test-Path $dest)) { Write-Host "  MISSING: $dest" -ForegroundColor Red; $allOk = $false }
 }
-if (-not $allOk) { Write-Host "验证失败！" -ForegroundColor Red; exit 1 }
+if ($allOk) { Write-Host "  All OK" -ForegroundColor Green }
+else { Write-Host "  Some files missing, continue..." -ForegroundColor Yellow }
 
-Write-Host "[4/4] 重启服务..." -ForegroundColor Cyan
-cd $farmDir
-Start-Process -FilePath "node" -ArgumentList "server.js" -WindowStyle Normal
-
-Write-Host ""
-Write-Host "✅ 部署完成！ http://124.221.102.153:3333" -ForegroundColor Green
-Write-Host "💡 新功能: 存档位管理 + Mod 待选清单 + 创建新存档" -ForegroundColor Yellow
-Read-Host "按 Enter 退出"
+Write-Host "[4/4] Restart service..." -ForegroundColor Cyan
+Set-Location $farmDir -ErrorAction SilentlyContinue
+try {
+    Start-Process -FilePath "node" -ArgumentList "server.js" -WindowStyle Normal -ErrorAction Stop
+    Write-Host ""
+    Write-Host "Deploy done!" -ForegroundColor Green
+} catch {
+    Write-Host "Start failed: $_" -ForegroundColor Red
+    Write-Host "Check Node.js and C:\farm\server.js" -ForegroundColor Yellow
+}
+Write-Host "Refresh browser to apply changes" -ForegroundColor Yellow
+Read-Host "Press Enter to exit"

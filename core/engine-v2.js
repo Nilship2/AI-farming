@@ -1,4 +1,4 @@
-﻿// engine-v2.js — Region, Research, and Harvest Count enhancements
+// engine-v2.js — Region, Research, and Harvest Count enhancements
 // Overrides key functions from engine.js
 
 // ============================================================
@@ -240,6 +240,7 @@ plantCrop = function(regionId, slotId, cropId){
         if(!GS.inventory[s.crop.id])GS.inventory[s.crop.id]=0;
         GS.inventory[s.crop.id]+=hc;
         if(Math.random()<0.3)GS.inventory.seeds=(GS.inventory.seeds||0)+1;
+        if(GS.research&&GS.research.completed.indexOf("seedSelect")!==-1&&Math.random()<0.25)GS.inventory.seeds=(GS.inventory.seeds||0)+1;
         var _lcid=s.crop.id;
         s.crop=null;
         s.lastCrop=_lcid;
@@ -664,6 +665,7 @@ function doResearch(researchId){
         }
     }
     notify("研究完成："+rd.n+"！");
+    if(rd.unlocks){for(var ui3=0;ui3<rd.unlocks.length;ui3++){var u3=rd.unlocks[ui3];if(u3.type==="passive")notify("⭐ 获得永久被动："+u3.n+" — "+u3.d);}}
     renderResearch();renderUpgrades();R();
 }
 
@@ -701,6 +703,7 @@ function renderResearch(){
         h+='<div class="tt">'+rd.desc+'</div>';
         if(!done&&costStr)h+='<div class="tt">消耗:'+costStr+'</div>';
         if(done)h+='<div style="color:#66bb6a">✅ 已完成</div>';
+        if(done&&rd.unlocks){for(var ui2=0;ui2<rd.unlocks.length;ui2++){var u2=rd.unlocks[ui2];if(u2.type==="passive")h+='<div style="color:#ffd700;font-size:.8em">⭐ '+u2.n+': '+u2.d+'</div>';}}
         h+='</div>';
     }
     h+='</div></div>';
@@ -1184,7 +1187,7 @@ randEvent = function(){
     var evs=[
         {n:"天降甘霖",d:"雨水滋润了土地！",ef:function(){GS.weatherTimer=60;GS.weather="rainy";}},
         {n:"兔子来袭",d:"兔子偷吃了一些作物，但留下了兔毛可卖钱。",ef:function(){GS.coins+=Math.floor(Math.random()*200)+50;forEachCropSlot(function(s){if(Math.random()<0.15)s.crop.timer=Math.max(0,s.crop.timer-30);});}},
-        {n:"双倍市价日",d:"市场行情大涨，60秒内收获价值翻倍。",ef:function(){window._doubleValue=true;window._doubleValueEnd=Date.now()+60000;setTimeout(function(){window._doubleValue=false;window._doubleValueEnd=0;},60000);}},
+        
         {n:"神秘商人",d:"一位神秘商人高价收购你的产品！",ef:function(){var b=Math.floor(Math.random()*1000)+300;GS.coins+=b;GS.totalCoinsEarned+=b;notify("神秘商人给了你"+b+"💰");}},
         {n:"发现种子袋",d:"在田地边缘发现了被遗忘的种子！",ef:function(){GS.inventory.seeds=(GS.inventory.seeds||0)+8;notify("获得 8 颗种子！");}},
         {n:"友善的邻居",d:"邻居老张送来了他培育的新品种！",ef:function(){var lk=[];for(var k in CROP_DEFS){if(GS.discoveredCrops.indexOf(k)===-1&&CROP_DEFS[k].unlock<=GS.totalCoinsEarned+5000)lk.push(k);}if(lk.length>0){var cid=lk[Math.floor(Math.random()*lk.length)];GS.discoveredCrops.push(cid);notify("解锁了新品种："+CROP_DEFS[cid].n+"！");}}},
@@ -1198,7 +1201,6 @@ randEvent = function(){
         {n:"旅行商人停留",d:"一个疲惫的商人借宿一晚，留下了一些稀有货物。",ef:function(){genMerchant();notify("商人留下了一批货物！");}},
         {n:"地下温泉",d:"地质勘探队在农场地下发现温泉，土壤变得异常肥沃。",ef:function(){GS.weatherTimer=30;GS.weather="rainy";forEachCropSlot(function(s2){s2.crop.timer*=1.8;});}},
         {n:"植物突变",d:"一株作物发生了奇怪的变化，价值暴增！",ef:function(){forEachLandSlot(function(s3,rid,li){if(s3.crop&&Math.random()<0.2){var b2=CROP_DEFS[s3.crop.id].v*8;GS.coins+=b2;GS.totalCoinsEarned+=b2;notify("突变作物价值"+b2+"💰！");s3.crop=null;return true;}});}},
-        {n:"农具促销",d:"镇上五金店大甩卖，升级费用打折！",ef:function(){var b3=Math.floor(Math.random()*300)+200;GS.coins+=b3;GS.totalCoinsEarned+=b3;notify("省下了"+b3+"💰！");}},
         {n:"金色传说",d:"一道金光从田中出现——一株作物镀上了金色！",ef:function(){forEachCropSlot(function(s4){if(Math.random()<0.15){s4.crop.timer=s4.crop.gt;return true;}});notify("金色作物瞬间成熟！");}},
         {n:"丰收女神的祝福",d:"丰收女神路过此地，被你的勤劳打动。",ef:function(){GS.inventory.seeds=(GS.inventory.seeds||0)+15;var b4=Math.floor(Math.random()*2000)+1000;GS.coins+=b4;GS.totalCoinsEarned+=b4;notify("丰收女神赐予 "+b4+"💰 和 15 颗种子！");}},
         {n:"虫害预警",d:"农业局发来虫害预警，但你的杀虫剂刚好够用。",ef:function(){if(Math.random()<0.5){notify("成功抵御虫害！");}else{forEachCropSlot(function(s5){if(Math.random()<0.25)s5.crop.timer=Math.max(0,s5.crop.timer-50);});notify("虫害造成部分损失...");}}}
