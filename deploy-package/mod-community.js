@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // Mod 社区 v2 — 待选清单 + 创建新存档并应用模组
 // ============================================================
 (function() {
@@ -134,7 +134,7 @@
 
   window.renderModCommunity = function() {
     var p = document.getElementById("pmodcom");
-    if (!p || (" " + p.className + " ").indexOf(" ac ") === -1) return;
+    if (!p) return;
 
     var h = '';
     // 用户状态
@@ -146,6 +146,7 @@
       h += '<div style="font-size:.85em;color:#aaa;margin-bottom:4px"><a href="#" onclick="event.preventDefault();window._mcShowLogin()" style="color:#42a5f5">登录</a> / <a href="#" onclick="event.preventDefault();window._mcShowRegister()" style="color:#66bb6a">注册</a> </div>';
     }
     h += '<button class="bt sm gn" onclick="window.renderModCommunity()">🔄 刷新</button>';
+    h += '<button class="bt sm pu" onclick="window._mcOpenAI()">🤖 AI 开发</button>';
     h += '</div>';
 
     p.innerHTML = h + '<div id="modSelectionPanel"></div><div class="cd" id="modCommunityList" style="max-height:55vh;overflow-y:auto"><div style="text-align:center;color:#888;padding:20px">加载中...</div></div>';
@@ -157,6 +158,314 @@
   window._mcSetSort = function(s) { _mcSort = s; _mcPage = 1; loadList(); };
   window._mcDoSearch = function() { var el = document.getElementById("mcSearchInput"); _mcSearch = el ? el.value.trim() : ""; _mcPage = 1; loadList(); };
   window._mcGoPage = function(p) { if (p < 1) return; _mcPage = p; loadList(); };
+
+
+  // ======== AI 开发面板 ========
+  var _aiGenerating = false;
+
+  window._mcOpenAI = function() {
+    var ov = document.createElement("div");
+    ov.id = "mcAIOverlay";
+    ov.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:10001;overflow-y:auto;padding:20px;font-family:inherit";
+    
+    var h = '<div style="max-width:750px;margin:0 auto">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
+    h += '<h2 style="color:#ffd700;margin:0">🤖 AI 模组开发</h2>';
+    h += '<button onclick="document.getElementById(\'mcAIOverlay\').remove()" style="background:#ef5350;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.85em">关闭</button>';
+    h += '</div>';
+    
+    h += '<div class="cd" style="margin-bottom:12px">';
+    h += '<div style="color:#aaa;font-size:.85em;margin-bottom:8px">用自然语言描述你想要的 Mod，AI 将为你生成代码。</div>';
+    h += '<textarea id="mcAIPrompt" placeholder="例如：添加一种叫星光莓的作物，生长60秒，价值500金币，解锁需要累计10000金币" style="width:100%;height:80px;background:rgba(0,0,0,.3);border:1px solid #555;border-radius:6px;color:#f0e0c0;padding:10px;font-size:.9em;font-family:inherit;resize:vertical"></textarea>';
+    h += '<div style="margin-top:10px;display:flex;gap:8px">';
+    h += '<button id="mcAIGenBtn" onclick="window._mcAIGenerate()" class="bt gn" style="flex:1;padding:10px;font-size:.95em">✨ 生成 Mod</button>';
+    h += '<button onclick="window._mcAILoadExisting()" class="bt sm" style="padding:10px;font-size:.85em">📂 加载已有 Mod</button>';
+    h += '</div></div>';
+    
+    h += '<div class="cd" id="mcAIResult" style="display:none">';
+    h += '<h3>📝 生成结果</h3>';
+    h += '<div id="mcAIInfo" style="margin-bottom:8px"></div>';
+    h += '<textarea id="mcAICode" readonly style="width:100%;height:200px;background:rgba(0,0,0,.5);border:1px solid #555;border-radius:6px;color:#c0e0c0;padding:10px;font-family:Consolas,monospace;font-size:.82em;resize:vertical"></textarea>';
+    h += '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">';
+    h += '<button onclick="window._mcAICopy()" class="bt sm bl">📋 复制代码</button>';
+    h += '<button onclick="window._mcAISaveLocal()" class="bt sm gn">暂存至本地并立刻试用</button>';
+    h += '<button onclick="window._mcAIUpload()" class="bt sm pu">📤 上传到社区</button>';
+    h += '<label style="display:flex;align-items:center;gap:4px;font-size:.82em;color:#aaa;margin-left:8px"><input type="checkbox" id="mcAIPublic" checked> 公开</label>';
+    h += '<button onclick="window._mcAILoadExisting()" class="bt sm" style="padding:10px;font-size:.85em">📂 加载已有 Mod</button>';
+    h += '</div></div>';
+    
+    h += '<div id="mcAILoading" style="display:none;text-align:center;padding:30px;color:#ffd700">🤔 AI 正在思考中...</div>';
+    h += '</div>';
+    ov.innerHTML = h;
+    document.body.appendChild(ov);
+  };
+
+  window._mcAIGenerate = function() {
+    console.log('[AI] clicked, _aiGenerating='+_aiGenerating);
+    if (_aiGenerating) { console.log('[AI] blocked'); return; }
+    var promptEl = document.getElementById("mcAIPrompt");
+    console.log('[AI] promptEl='+(promptEl?promptEl.value.length:'null'));
+    var prompt = promptEl ? promptEl.value.trim() : "";
+    if (prompt.length < 5) {
+      console.log('[AI] prompt too short: '+prompt.length);
+      alert('提示：请至少输入5个字。当前长度：'+prompt.length);
+      return;
+    }
+    
+    _aiGenerating = true;
+    var btn = document.getElementById("mcAIGenBtn");
+    if (btn) { btn.disabled = true; btn.textContent = "生成中..."; }
+    var loading = document.getElementById("mcAILoading");
+    if (loading) loading.style.display = "block";
+    var result = document.getElementById("mcAIResult");
+    if (result) result.style.display = "none";
+    
+    var existingCode = (document.getElementById("mcAICode")||{}).value || "";
+    var finalPrompt = prompt;
+    if (existingCode.trim()) { finalPrompt = "现有Mod代码：\\n" + existingCode + "\\n\\n用户需求：" + prompt + "\\n\\n请基于现有代码进行修改，保持原有结构，仅做用户描述的改动。"; }
+    console.log('[AI] Calling API...'); api("/ai/generate", { method: "POST", body: { prompt: finalPrompt, existing_code: existingCode } }).then(function(d) {
+      _aiGenerating = false;
+      if (btn) { btn.disabled = false; btn.textContent = "✨ 生成 Mod"; }
+      if (loading) loading.style.display = "none";
+      
+      var info = document.getElementById("mcAIInfo");
+      if (info) info.innerHTML = '<div style="color:#ffcc80;font-weight:bold">' + esc(d.name) + '</div><div class="tt">' + esc(d.description) + '</div>';
+      var codeEl = document.getElementById("mcAICode");
+      if (codeEl) codeEl.value = d.code;
+      if (result) result.style.display = "block";
+      
+      if (typeof notify === "function") notify("✅ AI 已生成: " + d.name);
+    }).catch(function(e) {
+      _aiGenerating = false;
+      if (btn) { btn.disabled = false; btn.textContent = "✨ 生成 Mod"; }
+      if (loading) loading.style.display = "none";
+      if (typeof notify === "function") notify("❌ " + e.message);
+    });
+  };
+
+  window._mcAICopy = function() {
+    console.log('[AI] Copy clicked');
+    var codeEl = document.getElementById("mcAICode");
+    if (!codeEl) { console.log('[AI] Copy: no codeEl'); return; }
+    var text = codeEl.value;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      console.log('[AI] Copy: using clipboard API');
+      navigator.clipboard.writeText(text).then(function() {
+        console.log('[AI] Copy: success');
+        if (typeof notify === "function") notify("✅ 代码已复制");
+      }).catch(function() { console.log('[AI] Copy: clipboard failed, fallback'); copyFallback(codeEl, text); });
+    } else {
+      console.log('[AI] Copy: no clipboard API, fallback');
+      copyFallback(codeEl, text);
+    }
+    function copyFallback(el, txt) {
+      el.select(); el.setSelectionRange(0, 99999);
+      try { document.execCommand("copy"); console.log('[AI] Copy: execCommand ok'); if (typeof notify === "function") notify("✅ 已复制 (Ctrl+C)"); }
+      catch(e) { console.log('[AI] Copy: execCommand failed'); if (typeof notify === "function") notify("📋 请手动复制"); }
+    }
+  };
+
+  window._mcAISaveLocal = function() {
+    console.log('[AI] SaveLocal clicked');
+    var codeEl = document.getElementById("mcAICode");
+    var code = codeEl ? codeEl.value.trim() : "";
+    console.log('[AI] SaveLocal: code len=' + (code ? code.length : 0));
+    if (!code) { console.log('[AI] SaveLocal: no code'); if (typeof notify === "function") notify("没有代码可保存"); return; }
+    
+    var idMatch = code.match(/modId\s*:\s*["']([^"']+)["']/) || code.match(/id\s*:\s*["']([^"']+)["']/);
+    var modId = idMatch ? idMatch[1] : "ai_mod_" + Date.now();
+    console.log('[AI] SaveLocal: modId=' + modId);
+    var infoEl = document.getElementById("mcAIInfo");
+    var nameDivEl = infoEl ? infoEl.querySelector("div") : null;
+    var nameText = nameDivEl ? (nameDivEl.textContent || "AI Mod") : "AI Mod";
+    var descText = infoEl ? ((infoEl.querySelector(".tt")||{}).textContent || "") : "";
+    console.log('[AI] SaveLocal: name=' + nameText);
+    
+    try {
+      localStorage.setItem("farm_mod_code_" + modId, code);
+      console.log('[AI] SaveLocal: localStorage code saved');
+      localStorage.setItem("farm_mod_meta_" + modId, JSON.stringify({ name: nameText, version: "1.0", author: (currentUser||{}).username || "AI", description: descText }));
+      console.log('[AI] SaveLocal: localStorage meta saved');
+    } catch(e) {
+      console.error('[AI] SaveLocal: localStorage error', e);
+      if (typeof notify === "function") notify("❌ 保存失败: " + e.message);
+      return;
+    }
+    
+    var sel = getSelection();
+    console.log('[AI] SaveLocal: selection before=' + JSON.stringify(sel));
+    if (sel.indexOf(modId) === -1) { sel.push(modId); setSelection(sel); }
+    console.log('[AI] SaveLocal: selection after=' + JSON.stringify(sel));
+    
+    if (!window.__modManifest) window.__modManifest = [];
+    var found = false;
+    for (var mi = 0; mi < window.__modManifest.length; mi++) {
+      if (window.__modManifest[mi].id === modId) { found = true; break; }
+    }
+    if (!found) {
+      window.__modManifest.push({ id: modId, name: nameText, file: "(ai)", desc: descText, version: "1.0", community: true });
+    }
+    console.log('[AI] SaveLocal: manifest updated, found=' + found + ', total=' + window.__modManifest.length);
+    
+    if (typeof notify === "function") { console.log('[AI] SaveLocal: calling notify'); notify("💾 已保存: " + nameText + " (ID: " + modId + ")"); }
+    console.log('[AI] SaveLocal: calling renderSelection');
+    renderSelection();
+    console.log('[AI] SaveLocal: calling loadList');
+    loadList();
+    console.log('[AI] SaveLocal: done');
+  };
+
+  
+  window._mcAILoadExisting = function() {
+    console.log('[AI] LoadExisting clicked');
+    // Collect mods from localStorage + __modManifest
+    var mods = [];
+    var seen = {};
+    // From __modManifest
+    if (window.__modManifest) {
+      for (var i = 0; i < window.__modManifest.length; i++) {
+        var m = window.__modManifest[i];
+        if (!seen[m.id]) { seen[m.id] = true; mods.push(m); }
+      }
+    }
+    // From localStorage
+    for (var k in localStorage) {
+      if (k.indexOf("farm_mod_meta_") === 0) {
+        try {
+          var meta = JSON.parse(localStorage.getItem(k));
+          var id = k.replace("farm_mod_meta_", "");
+          if (meta && !seen[id]) { seen[id] = true; mods.push({ id: id, name: meta.name || id, desc: meta.description || "", version: meta.version || "1.0" }); }
+        } catch(e) {}
+      }
+    }
+    console.log('[AI] LoadExisting: found ' + mods.length + ' mods');
+    
+    if (mods.length === 0) {
+      if (typeof notify === "function") notify("没有找到已保存的 Mod");
+      return;
+    }
+    
+    // Show popup
+    var popup = document.createElement("div");
+    popup.id = "mcLoadPopup";
+    popup.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:10010;display:flex;align-items:center;justify-content:center";
+    var h = '<div style="background:#1a1a2e;border:1px solid #555;border-radius:12px;padding:20px;max-width:500px;width:90%;max-height:70vh;overflow-y:auto">';
+    h += '<h3 style="color:#ffd700;margin:0 0 12px 0">📂 选择要加载的 Mod</h3>';
+    for (var mi = 0; mi < mods.length; mi++) {
+      var mod = mods[mi];
+      h += '<div onclick="window._mcLoadExistingMod(\'' + esc(mod.id) + '\')" style="padding:10px;margin-bottom:6px;background:rgba(255,255,255,.05);border:1px solid #444;border-radius:8px;cursor:pointer;transition:background .2s" onmouseover="this.style.background=\'rgba(255,215,0,.15)\'" onmouseout="this.style.background=\'rgba(255,255,255,.05)\'">';
+      h += '<div style="color:#f0e0c0;font-weight:bold">' + esc(mod.name || mod.id) + '</div>';
+      h += '<div style="color:#888;font-size:.78em">ID: ' + esc(mod.id) + ' | ' + esc(mod.version || "?") + (mod.desc ? ' | ' + esc(mod.desc).substring(0,50) : '') + '</div>';
+      h += '</div>';
+    }
+    h += '<button onclick="document.getElementById(\'mcLoadPopup\').remove()" style="margin-top:12px;width:100%;padding:8px;background:#555;color:#fff;border:none;border-radius:6px;cursor:pointer">取消</button>';
+    h += '</div>';
+    popup.innerHTML = h;
+    document.body.appendChild(popup);
+  };
+
+  window._mcLoadExistingMod = function(modId) {
+    console.log('[AI] LoadExisting: loading ' + modId);
+    var popup = document.getElementById("mcLoadPopup");
+    if (popup) popup.remove();
+    
+    // Get code from localStorage
+    var code = localStorage.getItem("farm_mod_code_" + modId);
+    var meta = null;
+    try { meta = JSON.parse(localStorage.getItem("farm_mod_meta_" + modId)); } catch(e) {}
+    
+    if (!code) {
+      if (typeof notify === "function") notify("❌ 未找到 Mod 代码");
+      return;
+    }
+    
+    // Fill the AI panel
+    var codeEl = document.getElementById("mcAICode");
+    if (codeEl) codeEl.value = code;
+    
+    var infoEl = document.getElementById("mcAIInfo");
+    if (infoEl) {
+      var name = (meta && meta.name) || modId;
+      var desc = (meta && meta.description) || "";
+      infoEl.innerHTML = '<div style="color:#ffcc80;font-weight:bold">' + esc(name) + '</div><div class="tt">' + esc(desc) + '</div>';
+    }
+    
+    var resultEl = document.getElementById("mcAIResult");
+    if (resultEl) resultEl.style.display = "block";
+    
+    var promptEl = document.getElementById("mcAIPrompt");
+    var name = (meta && meta.name) || modId;
+    if (promptEl && !promptEl.value.trim()) {
+      promptEl.value = "改进此Mod: " + name;
+    }
+    
+    if (typeof notify === "function") notify("✅ 已加载: " + name);
+  };
+window._mcAIUpload = function() {
+    if (!currentUser) { if (typeof notify === "function") notify("请先登录"); return; }
+    var codeEl = document.getElementById("mcAICode");
+    var code = codeEl ? codeEl.value.trim() : "";
+    if (!code) { if (typeof notify === "function") notify("没有代码可上传"); return; }
+    
+    var infoEl = document.getElementById("mcAIInfo");
+    var nameEl2 = infoEl ? infoEl.querySelector("div") : null;
+    var nameText = nameEl2 ? (nameEl2.textContent || "AI Mod") : "AI Mod";
+    var descEl2 = infoEl ? infoEl.querySelector(".tt") : null;
+    var descText = descEl2 ? (descEl2.textContent || "") : "";
+    var publicEl = document.getElementById("mcAIPublic");
+    var isPublic = publicEl ? publicEl.checked : true;
+    
+    var idMatch = code.match(/modId\s*:\s*["']([^"']+)["']/) || code.match(/id\s*:\s*["']([^"']+)["']/);
+    var modId = idMatch ? idMatch[1] : "ai_mod_" + Date.now();
+    
+    api("/mods", { method: "POST", body: { id: modId, name: nameText, description: descText, version: "1.0", file_content: code, is_public: isPublic } })
+      .then(function(d) {
+        if (typeof notify === "function") notify("✅ " + d.message);
+        var ov = document.getElementById("mcAIOverlay"); if (ov) ov.remove();
+        renderModCommunity();
+        // 如果是已存在的mod（更新），刷新列表；否则打开上传界面以便版本迭代
+        if (d.message.indexOf("更新") === -1) {
+          setTimeout(function() {
+            if (currentUser) window._mcShowUploadWithCode(modId, nameText, descText, code);
+          }, 500);
+        }
+      })
+      .catch(function(e) {
+        if (typeof notify === "function") notify("❌ " + e.message);
+      });
+  };
+
+  // Override upload to include is_public checkbox
+  var _mcShowUploadOrig = window._mcShowUpload;
+  window._mcShowUploadWithCode = function(id, name, desc, code) {
+    if (!currentUser) { if (typeof notify === "function") notify("请先登录"); return; }
+    showForm("上传/更新 Mod", [
+      {label:"Mod ID", id:"mc_uid", placeholder:"my_cool_mod", value:id},
+      {label:"名称", id:"mc_uname", value:name},
+      {label:"描述", id:"mc_udesc", value:desc},
+      {label:"版本", id:"mc_uver", placeholder:"1.0", value:"1.0"},
+      {label:"JS 代码", id:"mc_ucode", type:"textarea", value:code},
+      {label:"公开", id:"mc_upublic", type:"checkbox", checked:true}
+    ], function(v) {
+      api("/mods", {method:"POST", body:{id:v.mc_uid, name:v.mc_uname, description:v.mc_udesc, version:v.mc_uver, file_content:v.mc_ucode, is_public: v.mc_upublic !== false}})
+        .then(function(d) { if (typeof notify === "function") notify("✅ " + d.message); renderModCommunity(); document.getElementById("mcFormOverlay").remove(); })
+        .catch(function(e) { alert("上传失败: " + e.message); });
+    });
+  };
+
+  window._mcShowUpload = function() {
+    showForm("上传 Mod", [
+      {label:"Mod ID (英文)", id:"mc_uid", placeholder:"my_cool_mod"},
+      {label:"名称", id:"mc_uname"}, {label:"描述", id:"mc_udesc"},
+      {label:"版本", id:"mc_uver", placeholder:"1.0"},
+      {label:"JS 代码", id:"mc_ucode", type:"textarea", placeholder:"DataRegistry.register('crop', {...}, {modId: 'xxx'});"},
+      {label:"公开", id:"mc_upublic", type:"checkbox", checked:true}
+    ], function(v) {
+      api("/mods", {method:"POST", body:{id:v.mc_uid, name:v.mc_uname, description:v.mc_udesc, version:v.mc_uver, file_content:v.mc_ucode, is_public: v.mc_upublic !== false}})
+        .then(function(d) { if (typeof notify === "function") notify("✅ " + d.message); renderModCommunity(); document.getElementById("mcFormOverlay").remove(); })
+        .catch(function(e) { alert("上传失败: " + e.message); });
+    });
+  };
 
   // ======== 按钮动作 ========
   window._mcAddSel = function(id) {
@@ -244,8 +553,9 @@
     for (var i = 0; i < fields.length; i++) {
       var f = fields[i];
       h += '<div style="margin-bottom:8px"><label style="font-size:.82em;color:#aaa;display:block;margin-bottom:3px">' + esc(f.label) + '</label>';
-      if (f.type === "textarea") h += '<textarea id="' + f.id + '" placeholder="' + esc(f.placeholder||"") + '" style="width:100%;min-height:120px;background:rgba(0,0,0,.3);border:1px solid #555;border-radius:6px;color:#f0e0c0;padding:8px;font-family:Consolas,monospace;font-size:.82em;resize:vertical"></textarea>';
-      else h += '<input type="' + (f.type||"text") + '" id="' + f.id + '" placeholder="' + esc(f.placeholder||"") + '" style="width:100%;background:rgba(0,0,0,.3);border:1px solid #555;border-radius:6px;color:#f0e0c0;padding:8px;font-size:.9em">';
+      if (f.type === "textarea") h += '<textarea id="' + f.id + '" placeholder="' + esc(f.placeholder||"") + '" style="width:100%;min-height:120px;background:rgba(0,0,0,.3);border:1px solid #555;border-radius:6px;color:#f0e0c0;padding:8px;font-family:Consolas,monospace;font-size:.82em;resize:vertical">' + esc(f.value||"") + '</textarea>';
+      else if(f.type==="checkbox")h+='<input type="checkbox" id="'+f.id+'"'+(f.checked?' checked':'')+' style="width:auto;margin-top:8px"> <label for="'+f.id+'" style="font-size:.9em;color:#aaa">'+esc(f.label)+'</label>';
+      else h += '<input type="' + (f.type||"text") + '" id="' + f.id + '" placeholder="' + esc(f.placeholder||"") + '" value="' + esc(f.value||"") + '" style="width:100%;background:rgba(0,0,0,.3);border:1px solid #555;border-radius:6px;color:#f0e0c0;padding:8px;font-size:.9em">';
       h += '</div>';
     }
     h += '<div style="margin-top:14px;display:flex;gap:8px"><button onclick="window._mcSubmitForm()" style="flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;font-size:.95em;font-weight:bold;color:#1a0a00;background:linear-gradient(135deg,#ffd700,#ffaa00)">确认</button>';
@@ -258,7 +568,7 @@
     var values = {};
     for (var i = 0; i < ov._fields.length; i++) {
       var f = ov._fields[i]; var el = document.getElementById(f.id);
-      values[f.id] = el ? el.value : "";
+      values[f.id] = el ? (f.type==="checkbox" ? el.checked : el.value) : (f.type==="checkbox" ? false : "");
     }
     ov._cb(values);
   };
@@ -277,6 +587,22 @@
       api("/auth/register", {method:"POST", body:{username:v.mc_ru, password:v.mc_rp}})
         .then(function(d) { setAuth(d.token, d.user); if (typeof notify === "function") notify("✅ 欢迎 " + d.user.username); renderModCommunity(); document.getElementById("mcFormOverlay").remove(); })
         .catch(function(e) { alert("注册失败: " + e.message); });
+    });
+  };
+
+  window._mcShowUploadWithCode = function(id, name, desc, code) {
+    if (!currentUser) { if (typeof notify === "function") notify("请先登录"); return; }
+    showForm("上传/更新 Mod", [
+      {label:"Mod ID", id:"mc_uid", placeholder:"my_cool_mod", value:id},
+      {label:"名称", id:"mc_uname", value:name},
+      {label:"描述", id:"mc_udesc", value:desc},
+      {label:"版本", id:"mc_uver", placeholder:"1.0", value:"1.0"},
+      {label:"JS 代码", id:"mc_ucode", type:"textarea", value:code},
+      {label:"公开", id:"mc_upublic", type:"checkbox", checked:true}
+    ], function(v) {
+      api("/mods", {method:"POST", body:{id:v.mc_uid, name:v.mc_uname, description:v.mc_udesc, version:v.mc_uver, file_content:v.mc_ucode, is_public: v.mc_upublic !== false}})
+        .then(function(d) { if (typeof notify === "function") notify("✅ " + d.message); renderModCommunity(); document.getElementById("mcFormOverlay").remove(); })
+        .catch(function(e) { alert("上传失败: " + e.message); });
     });
   };
 
@@ -299,7 +625,7 @@
     if (document.getElementById("tabModCommunity")) return;
     var btn = document.createElement("button"); btn.className = "tb"; btn.id = "tabModCommunity"; btn.setAttribute("data-pn", "modcom"); btn.textContent = "📦 模组社区";
     var sysTab = tabs.querySelector('[data-pn="system"]'); if (sysTab) tabs.insertBefore(btn, sysTab); else tabs.appendChild(btn);
-    var panel = document.createElement("div"); panel.className = "pn"; panel.id = "pmodcom"; (document.getElementById("pf")?.parentNode || document.body).appendChild(panel);
+    var panel = document.createElement("div"); panel.className = "pn"; panel.id = "pmodcom"; (function(){var pn=document.getElementById("pf");return pn?pn.parentNode:document.body;})().appendChild(panel);
   }
 
   function init() {

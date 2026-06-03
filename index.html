@@ -181,7 +181,7 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <button class="tb" data-pn="research">🔬 研究</button>
 <button class="tb" data-pn="inventory">📦 库存</button>
 <button class="tb" data-pn="system">⚙️ 系统</button>
-<button class="tb" data-pn="modedit" id="tabModEdit" style="display:none">🔧 模组开发</button>
+<button class="tb" data-pn="modcom" id="tabModCommunity">📦 模组社区</button>
 </div>
 <div id="pf" class="pn ac"></div>
 <div id="pa" class="pn"></div>
@@ -195,6 +195,7 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
 <div id="pinv" class="pn"></div>
 <div id="psys" class="pn"></div>
 <div id="pmodedit" class="pn"></div>
+    <div id="pmodcom" class="pn"></div>
 <div id="presearch" class="pn"></div>
 <div class="sb">每30秒自动存档 | 刷新页面继续游戏</div>
 <!-- 数据注册中心 -->
@@ -258,7 +259,7 @@ body.light [style*="color:#ffcc80"]{color:#6b3a0a!important}
     function buildMoreMenu(){
         var menu=document.getElementById("mobileMoreMenu");
         if(!menu)return;
-        var allTabs=["farm","animals","process","upgrades","trade","bestiary","achievements","journal","prestige","relics","tutorial","research","inventory","system","modedit","techtree","modcom"];
+        var allTabs=["farm","animals","process","upgrades","trade","bestiary","achievements","journal","prestige","relics","tutorial","research","inventory","system","modcom","techtree"];
         var mainNav=["farm","animals","inventory","upgrades"];
         var html='';
         for(var i=0;i<allTabs.length;i++){

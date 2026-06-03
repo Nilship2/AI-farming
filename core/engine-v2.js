@@ -1,4 +1,4 @@
-// engine-v2.js — Region, Research, and Harvest Count enhancements
+﻿// engine-v2.js — Region, Research, and Harvest Count enhancements
 // Overrides key functions from engine.js
 
 // ============================================================
@@ -44,15 +44,16 @@ function getCropSeasonMult(cd, seasonName){
     return 1.0;
 }
 function getHarvestCount(cd){
-    var hc=cd.harvestCount||2;
-    if(GS.gemUpgrades){
-        if(GS.gemUpgrades.harvestBless)hc+=1;
-        if(GS.gemUpgrades.harvestBless2)hc+=1;
-        if(GS.gemUpgrades.rareBreed&&cd.isHybrid)hc+=1;
+    if(!cd.pool)ensureCropPool(cd);
+    var nb=getNormalBonus();
+    var total=0;
+    for(var pi=0;pi<cd.pool.length;pi++){
+        var p=cd.pool[pi];
+        if(p.rarity==='normal'&&p.p>=1)total+=p.q+nb;
     }
-    if(GS.relics)for(var ri=0;ri<GS.relics.length;ri++){var rd=RELIC_DEFS[GS.relics[ri]];if(rd&&rd.ef==="harvestPlus")hc+=rd.v;}
-    if(GS.research&&GS.research.completed&&GS.research.completed.indexOf("harvestTech")!==-1)hc+=1;
-    return hc;
+    if(GS.research&&GS.research.completed&&GS.research.completed.indexOf("harvestTech")!==-1)total+=1;
+    if(GS.gemUpgrades&&GS.gemUpgrades.rareBreed&&cd.isHybrid)total+=1;
+    return total||(cd.harvestCount||2);
 }
 
 // ============================================================
@@ -236,11 +237,13 @@ plantCrop = function(regionId, slotId, cropId){
         if(GS.gemUpgrades&&GS.gemUpgrades.goldenLegend)v*=1.2;
         if(window._doubleValue&&window._doubleValueEnd>Date.now())v*=2;
         GS.totalCropsHarvested++;
-        var hc=getHarvestCount(cd);
-        if(!GS.inventory[s.crop.id])GS.inventory[s.crop.id]=0;
-        GS.inventory[s.crop.id]+=hc;
-        if(Math.random()<0.3)GS.inventory.seeds=(GS.inventory.seeds||0)+1;
-        if(GS.research&&GS.research.completed.indexOf("seedSelect")!==-1&&Math.random()<0.25)GS.inventory.seeds=(GS.inventory.seeds||0)+1;
+        if(!cd.pool)ensureCropPool(cd);
+        var nb=getNormalBonus();
+        var sb=getSeedBonus();
+        var pool=cd.pool;
+        if(sb>0){pool=[];for(var si=0;si<cd.pool.length;si++){var spi=cd.pool[si];pool.push(spi.k==='seeds'?{k:spi.k,n:spi.n,q:spi.q,p:Math.min(1,spi.p+sb),rarity:spi.rarity}:spi);}}
+        var results=rollPool(pool,nb,1);
+        for(var ri2=0;ri2<results.length;ri2++){var r=results[ri2];if(!GS.inventory[r.k])GS.inventory[r.k]=0;GS.inventory[r.k]+=r.q;if(r.rarity==='rare')notify('✨ 获得稀有产物：'+r.n+' x'+r.q+'！');}
         var _lcid=s.crop.id;
         s.crop=null;
         s.lastCrop=_lcid;
@@ -311,7 +314,7 @@ showPlants = function(regionId, slotId){
         if(soilMult>1)notes+=' 🔺土壤x'+soilMult.toFixed(1);
         if(seasonMult>1)notes+=' 🔺季节x'+seasonMult.toFixed(1);
         if(seasonMult<1)notes+=' 🔻季节x'+seasonMult.toFixed(1);
-        h+='<div class="sl" data-action="doPlant" data-rid="'+regionId+'" data-sid="'+slotId+'" data-cid="'+cid+'"><div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div><div class="tt">生长:'+formatTime(cd.g)+' | 产出:'+hc+'个</div><div class="tt">种子:'+sc+notes+'</div></div>';
+        h+='<div class="sl" data-action="doPlant" data-rid="'+regionId+'" data-sid="'+slotId+'" data-cid="'+cid+'"><div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div><div class="tt">生长:'+formatTime(cd.g)+' | 产出:'+hc+'个</div>'+formatPoolInfo(cd)+'<div class="tt">种子:'+sc+notes+'</div></div>';
     }
     h+='<button class="bt sm rd" data-action="cancelPlant" style="margin-top:8px">✖ 取消</button></div></div>';
     var pf2=document.getElementById("pf");if(pf2)pf2.innerHTML=h;
@@ -580,13 +583,13 @@ renderFarm = function(){
         for(var j=0;j<GS.animals.length;j++){
             var a=GS.animals[j];a.pt+=dt;
             if((GS.upgrades.drone&&GS.droneOn!==false||GS.upgrades.fullAuto)&&a.pr){
-                var ad2=ANIMAL_DEFS[a.id];if(ad2){var pk2=ad2.p.k;if(!GS.inventory[pk2])GS.inventory[pk2]=0;GS.inventory[pk2]++;var adbl=GS.gemUpgrades&&GS.gemUpgrades.animalFriend?0.15:0;if(Math.random()<adbl){GS.inventory[pk2]++;}}a.pr=false;
+                var ad2=ANIMAL_DEFS[a.id];if(ad2){if(!ad2.pool)ensureAnimalPool(ad2);var aPool2=a.af>=a.am?ad2.pool_full:ad2.pool;var aRes2=rollPool(aPool2,0,1);for(var ari2=0;ari2<aRes2.length;ari2++){var arr2=aRes2[ari2];if(!GS.inventory[arr2.k])GS.inventory[arr2.k]=0;GS.inventory[arr2.k]+=arr2.q;}var adbl=GS.gemUpgrades&&GS.gemUpgrades.animalFriend?0.15:0;if(Math.random()<adbl){for(var ari3=0;ari3<aRes2.length;ari3++){var arr3=aRes2[ari3];if(!GS.inventory[arr3.k])GS.inventory[arr3.k]=0;GS.inventory[arr3.k]+=arr3.q;}}}a.pr=false;
             }
             if(a.pt>=a.pi){a.pt-=a.pi;a.pr=true;}
             if(a.af<a.am){a.af+=dt*0.05*_aaf;if(a.af>=a.am&&GS.animals.length<GS.maxAnimals&&Math.random()<0.15){var nk=Object.keys(ANIMAL_DEFS);var nid=nk[Math.floor(Math.random()*nk.length)];var nd=ANIMAL_DEFS[nid];if(GS.totalCoinsEarned>=nd.unlock){GS.animals.push({id:nid,n:nd.n,i:nd.i,af:0,am:nd.am,pt:0,pi:nd.p.t,pr:false});if(GS.discoveredAnimals.indexOf(nid)===-1)GS.discoveredAnimals.push(nid);GS.totalAnimalsRaised++;notify(nd.i+" "+nd.n+"被你的动物的好感吸引来了！");}}}
         }
         // Processors
-        for(var pk in GS.processors){var pr=GS.processors[pk];if(!pr.busy)continue;if((GS.upgrades.drone&&GS.droneOn!==false)||GS.upgrades.fullAuto){var pd=PROC_DEFS[pk];if(pd&&(!GS.inventory[pd.inp.k]||GS.inventory[pd.inp.k]<1)){pr.busy=false;pr.timer=0;continue;}}pr.timer-=dt;if(pr.timer<=0){pr.busy=false;pr.timer=0;var d=PROC_DEFS[pk];if(!GS.inventory[d.out.k])GS.inventory[d.out.k]=0;GS.inventory[d.out.k]+=pr.level;if((GS.upgrades.drone&&GS.droneOn!==false)||GS.upgrades.fullAuto){if(GS.inventory[d.inp.k]>=1){GS.inventory[d.inp.k]--;pr.busy=true;pr.timer=d.t;}}notify(d.n+" 生产了"+pr.level+" 个"+d.out.n);}}
+        for(var pk in GS.processors){var pr=GS.processors[pk];if(!pr.busy)continue;if((GS.upgrades.drone&&GS.droneOn!==false)||GS.upgrades.fullAuto){var pd=PROC_DEFS[pk];if(pd){if(!Array.isArray(pd.inp))pd.inp=[pd.inp];var noRes=false;for(var ii0=0;ii0<pd.inp.length;ii0++){if(!GS.inventory[pd.inp[ii0].k]||GS.inventory[pd.inp[ii0].k]<1){noRes=true;break;}}if(noRes){pr.busy=false;pr.timer=0;continue;}}}pr.timer-=dt;if(pr.timer<=0){pr.busy=false;pr.timer=0;var d=PROC_DEFS[pk];if(!d.pool)ensureProcPool(d);var presults=rollPool(d.pool,0,pr.level);var pnote='';for(var pi_=0;pi_<presults.length;pi_++){var pr_=presults[pi_];if(!GS.inventory[pr_.k])GS.inventory[pr_.k]=0;GS.inventory[pr_.k]+=pr_.q;pnote+=(pnote?' ':'')+pr_.n+' x'+pr_.q;}notify(d.n+" 加工完成："+pnote);if((GS.upgrades.drone&&GS.droneOn!==false)||GS.upgrades.fullAuto){var ok=true;if(!Array.isArray(d.inp))d.inp=[d.inp];for(var ii2=0;ii2<d.inp.length;ii2++){if(!GS.inventory[d.inp[ii2].k]||GS.inventory[d.inp[ii2].k]<d.inp[ii2].q*pr.level)ok=false;}if(ok){for(var ii3=0;ii3<d.inp.length;ii3++)GS.inventory[d.inp[ii3].k]-=d.inp[ii3].q*pr.level;pr.busy=true;pr.timer=d.t;}}}}
         GS.eventCooldown-=dt;if(GS.eventCooldown<=0){randEvent();GS.eventCooldown=180+Math.random()*300;}
         GS.merchantTimer-=dt;if(GS.merchantTimer<=0&&GS.coins>=5000){genMerchant();var mf2=1;if(GS.relics)for(var ri2=0;ri2<GS.relics.length;ri2++){var rd2=RELIC_DEFS[GS.relics[ri2]];if(rd2&&rd2.ef==="merchantFreq")mf2-=rd2.v;}GS.merchantTimer=(240+Math.random()*360)*Math.max(0.3,mf2);}
         checkAch();
@@ -963,9 +966,10 @@ renderInventory = function(){
             t.classList.add("ac");
             var panels=document.querySelectorAll(".pn");
             for(var j=0;j<panels.length;j++)panels[j].classList.remove("ac");
-            var panelMap={farm:"pf",animals:"pa",process:"pp",upgrades:"pu",trade:"pt",bestiary:"pb",achievements:"pach",journal:"pj",prestige:"ppr",relics:"pr",tutorial:"ptut",research:"presearch",inventory:"pinv",system:"psys",modedit:"pmodedit"};
+            var panelMap={farm:"pf",animals:"pa",process:"pp",upgrades:"pu",trade:"pt",bestiary:"pb",achievements:"pach",journal:"pj",prestige:"ppr",relics:"pr",tutorial:"ptut",research:"presearch",inventory:"pinv",system:"psys",modedit:"pmodedit",modcom:"pmodcom"};
             var targetEl=document.getElementById(panelMap[pn]);
             if(targetEl)targetEl.classList.add("ac");
+            if(pn==="modcom"&&typeof renderModCommunity==="function")renderModCommunity();
             var ss=document.getElementById("seedstore");
             if(ss){if(pn==="farm")ss.classList.add("ac");else ss.classList.remove("ac");}
         });

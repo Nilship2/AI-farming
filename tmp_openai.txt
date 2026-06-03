@@ -1,0 +1,16 @@
+﻿window._mcOpenAI = function() {
+    var ov = document.createElement("div");
+    ov.id = "mcAIOverlay";
+    ov.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:10001;overflow-y:auto;padding:20px;font-family:inherit";
+    
+    var h = '<div style="max-width:750px;margin:0 auto">';
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">';
+    h += '<h2 style="color:#ffd700;margin:0">🤖 AI 模组开发</h2>';
+    h += '<button onclick="document.getElementById(\'mcAIOverlay\').remove()" style="background:#ef5350;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:.85em">关闭</button>';
+    h += '</div>';
+    
+    h += '<div class="cd" style="margin-bottom:12px">';
+    h += '<div style="color:#aaa;font-size:.85em;margin-bottom:8px">用自然语言描述你想要的 Mod，AI 将为你生成代码。</div>';
+    h += '<textarea id="mcAIPrompt" placeholder="例如：添加一种叫星光莓的作物，生长60秒，价值500金币，解锁需要累计10000金币" style="width:100%;height:80px;background:rgba(0,0,0,.3);border:1px solid #555;border-radius:6px;color:#f0e0c0;padding:10px;font-size:.9em;font-family:inherit;resize:vertical"></textarea>';
+    h += '<div style="margin-top:10px;display:flex;gap:8px">';
+    h += '<button id="mcAIGenBtn" onclick="
