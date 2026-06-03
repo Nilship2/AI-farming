@@ -310,11 +310,7 @@ showPlants = function(regionId, slotId){
         var soilMult=getCropSoilMult(cd,soil);
         var seasonMult=getCropSeasonMult(cd,SNAMES[GS.season]);
         var hc=getHarvestCount(cd);
-        var notes='';
-        if(soilMult>1)notes+=' 🔺土壤x'+soilMult.toFixed(1);
-        if(seasonMult>1)notes+=' 🔺季节x'+seasonMult.toFixed(1);
-        if(seasonMult<1)notes+=' 🔻季节x'+seasonMult.toFixed(1);
-        h+='<div class="sl" data-action="doPlant" data-rid="'+regionId+'" data-sid="'+slotId+'" data-cid="'+cid+'"><div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div><div class="tt">生长:'+formatTime(cd.g)+' | 产出:'+hc+'个</div>'+formatPoolInfo(cd)+'<div class="tt">种子:'+sc+notes+'</div></div>';
+        var speedNotes='';if(soilMult>1)speedNotes+='土壤x'+soilMult.toFixed(1)+' ';if(seasonMult>1)speedNotes+='季节x'+seasonMult.toFixed(1)+' ';if(seasonMult<1)speedNotes+='季节x'+seasonMult.toFixed(1)+' ';var dropHtml='';if(cd.pool){var items=[];for(var pi=0;pi<cd.pool.length;pi++){var p2=cd.pool[pi];if(p2.p<1||p2.rarity==='rare')items.push((p2.rarity==='rare'?'✨ ':'')+p2.n+': '+(p2.p*100).toFixed(0)+'% x'+p2.q);}if(items.length>0){var tipText=items.join('&#10;');dropHtml='<div class="tt plantDrop" style="color:#7a7;font-size:.75em;cursor:help" data-drops="'+tipText+'">🔄 有其他掉落</div>';}}h+='<div class="sl" data-action="doPlant" data-rid="'+regionId+'" data-sid="'+slotId+'" data-cid="'+cid+'"><div style="font-size:2em">'+(cd.i||'🌡')+'</div><div>'+cd.n+'</div><div class="tt">生长:'+formatTime(cd.g)+' | 产出:'+hc+'个</div>'+dropHtml+'<div class="tt">种植消耗种子:'+sc+'</div>'+(speedNotes?'<div class="tt" style="color:#8af">生长速度加成: '+speedNotes+'</div>':'')+'</div>';
     }
     h+='<button class="bt sm rd" data-action="cancelPlant" style="margin-top:8px">✖ 取消</button></div></div>';
     var pf2=document.getElementById("pf");if(pf2)pf2.innerHTML=h;

@@ -800,4 +800,83 @@ window.rejectOffer = function(idx) {
         // 插入到面板末尾
         panel.insertAdjacentHTML("beforeend", h);
     };
+
+// ============================================================
+// Plant drop tooltip — custom styled like growth tooltip
+// ============================================================
+(function(){
+    var dropTip = null;
+    function getDropTip(){
+        if(!dropTip){
+            dropTip = document.createElement("div");
+            dropTip.id = "dropTooltip";
+            dropTip.style.cssText = "position:fixed;z-index:9999;background:rgba(30,30,30,.95);color:#e0e0e0;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.2);box-shadow:0 4px 20px rgba(0,0,0,.5);min-width:160px;pointer-events:none;font-size:.8em;display:none;line-height:1.6";
+            document.body.appendChild(dropTip);
+        }
+        return dropTip;
+    }
+    function showDropTip(el, e){
+        var drops = el.getAttribute("data-drops");
+        if(!drops){ getDropTip().style.display = "none"; return; }
+        var t = getDropTip();
+        t.innerHTML = drops;
+        t.style.display = "block";
+        var x = e.clientX + 15;
+        var y = e.clientY - 10;
+        if(x + t.offsetWidth > window.innerWidth) x = e.clientX - t.offsetWidth - 15;
+        if(y + t.offsetHeight > window.innerHeight) y = window.innerHeight - t.offsetHeight - 5;
+        if(x < 5) x = 5;
+        if(y < 5) y = 5;
+        t.style.left = x + "px";
+        t.style.top = y + "px";
+    }
+    function hideDropTip(){
+        var t = getDropTip();
+        t.style.display = "none";
+    }
+    function attachDropTip(){
+        var pf = document.getElementById("pf");
+        if(!pf) return setTimeout(attachDropTip, 500);
+        pf.addEventListener("mouseover", function(e){
+            var el = e.target;
+            while(el && el !== pf && el !== document.body){
+                if(el.nodeType === 1 && (" " + el.className + " ").indexOf(" plantDrop ") !== -1){
+                    showDropTip(el, e);
+                    return;
+                }
+                el = el.parentNode;
+            }
+            hideDropTip();
+        });
+        pf.addEventListener("mouseout", function(e){
+            var el = e.target;
+            if(el && el.nodeType === 1 && (" " + el.className + " ").indexOf(" plantDrop ") !== -1){
+                var rel = e.relatedTarget;
+                var p = rel;
+                while(p && p !== document.body){
+                    if(p === el) return;
+                    p = p.parentNode;
+                }
+                hideDropTip();
+            }
+        });
+        // Touch support for mobile — long press shows tooltip
+        var touchTimer = null;
+        pf.addEventListener("touchstart", function(e){
+            var el = e.target;
+            while(el && el !== pf && el !== document.body){
+                if(el.nodeType === 1 && (" " + el.className + " ").indexOf(" plantDrop ") !== -1){
+                    touchTimer = setTimeout(function(){ showDropTip(el, {clientX: e.touches[0].clientX, clientY: e.touches[0].clientY}); }, 600);
+                    return;
+                }
+                el = el.parentNode;
+            }
+        }, {passive: false});
+        pf.addEventListener("touchend", function(){ if(touchTimer){ clearTimeout(touchTimer); touchTimer = null; } hideDropTip(); });
+        pf.addEventListener("touchmove", function(){ if(touchTimer){ clearTimeout(touchTimer); touchTimer = null; } });
+    }
+    if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", attachDropTip);
+    else attachDropTip();
+})();
+
 })();
